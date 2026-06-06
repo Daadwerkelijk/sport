@@ -1,7 +1,7 @@
 {
-  "name": "FietsTracker",
-  "short_name": "FietsTracker",
-  "description": "Cardio fietsresultaten bijhouden",
+  "name": "Sport-Tracker",
+  "short_name": "Sport-Tracker",
+  "description": "Sportresultaten bijhouden",
   "start_url": "/sport/",
   "scope": "/sport/",
   "display": "standalone",
