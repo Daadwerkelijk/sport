@@ -1,54 +1,28 @@
-const CACHE = 'fiets-v1';
+const CACHE = 'fiets-v2';
 const ASSETS = [
-  '/',
-  '/index.html',
-  'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Mono:wght@400;500&display=swap',
-  'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'
+  '/sport/',
+  '/sport/index.html',
+  '/sport/manifest.json',
+  '/sport/icon-192.png',
+  '/sport/icon-512.png'
 ];
-
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(ASSETS)).catch(() => {})
-  );
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS).catch(()=>{})));
   self.skipWaiting();
 });
-
 self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
-  );
+  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
   self.clients.claim();
 });
-
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
-
-  // Supabase calls altijd via netwerk — nooit cachen
-  if (url.hostname.includes('supabase.co')) {
-    e.respondWith(fetch(e.request));
+  if(url.hostname.includes('supabase.co')||url.hostname.includes('googleapis')||url.hostname.includes('jsdelivr')||url.hostname.includes('gstatic')){
+    e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));
     return;
   }
-
-  // Fonts en Chart.js: cache-first
-  if (url.hostname.includes('googleapis') || url.hostname.includes('gstatic') || url.hostname.includes('jsdelivr')) {
-    e.respondWith(
-      caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
-        const clone = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, clone));
-        return res;
-      }))
-    );
-    return;
-  }
-
-  // App shell: network-first, fallback naar cache
-  e.respondWith(
-    fetch(e.request).then(res => {
-      const clone = res.clone();
-      caches.open(CACHE).then(c => c.put(e.request, clone));
-      return res;
-    }).catch(() => caches.match(e.request))
-  );
+  e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{
+    const cl=r.clone();
+    caches.open(CACHE).then(cache=>cache.put(e.request,cl));
+    return r;
+  })));
 });

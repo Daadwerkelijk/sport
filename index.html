@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#534AB7">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -10,260 +10,430 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>FietsTracker</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-:root {
-  --p50:#EEEDFE; --p100:#CECBF6; --p200:#AFA9EC; --p400:#7F77DD; --p600:#534AB7; --p800:#3C3489; --p900:#26215C;
-  --t50:#E1F5EE; --t100:#9FE1CB; --t400:#1D9E75; --t600:#0F6E56; --t800:#085041; --t900:#04342C;
-  --c50:#FAECE7; --c100:#F5C4B3; --c400:#D85A30; --c600:#993C1D; --c800:#712B13;
-  --a50:#FAEEDA; --a100:#FAC775; --a400:#BA7517; --a600:#854F0B; --a800:#633806; --a900:#412402;
-  --bg:#F8F7FF; --white:#ffffff; --text:#1a1a2e; --muted:#6b6b8a; --border:#E0DFF7;
-  --radius:10px; --radius-lg:14px;
-  --font:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
+:root{
+  --p50:#EEEDFE;--p100:#CECBF6;--p200:#AFA9EC;--p400:#7F77DD;--p600:#534AB7;--p800:#3C3489;--p900:#26215C;
+  --t50:#E1F5EE;--t100:#9FE1CB;--t400:#1D9E75;--t600:#0F6E56;--t800:#085041;
+  --c50:#FAECE7;--c100:#F5C4B3;--c400:#D85A30;--c600:#993C1D;--c800:#712B13;
+  --a50:#FAEEDA;--a100:#FAC775;--a400:#BA7517;--a600:#854F0B;--a900:#412402;
+  --bg:#F4F3FF;--white:#fff;--text:#1a1a2e;--muted:#6b6b8a;--border:#E0DFF7;
+  --nav-h:64px;--top-h:56px;
+  --font:'DM Sans',sans-serif;
 }
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;}
-.navbar{background:var(--p600);padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:100;}
-.navbar-brand{display:flex;align-items:center;gap:8px;color:var(--p50);font-size:15px;font-weight:500;}
-.navbar-brand svg{opacity:.8;}
-.nav-tabs{display:flex;gap:2px;}
-.nav-tab{padding:6px 12px;border-radius:var(--radius);font-size:12px;color:var(--p100);cursor:pointer;display:flex;align-items:center;gap:5px;transition:background .15s;}
-.nav-tab:hover{background:rgba(255,255,255,.1);}
-.nav-tab.active{background:var(--p800);color:var(--p50);}
-.page{display:none;padding:20px;max-width:900px;margin:0 auto;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overscroll-behavior:none;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15px;
+  padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom));}
+
+/* TOP BAR */
+.topbar{background:var(--p600);height:var(--top-h);display:flex;align-items:center;
+  padding:0 16px;position:sticky;top:0;z-index:100;
+  padding-top:env(safe-area-inset-top);}
+.topbar-title{color:var(--p50);font-size:17px;font-weight:600;display:flex;align-items:center;gap:8px;}
+.topbar-title svg{opacity:.85;}
+.topbar-sub{color:var(--p200);font-size:13px;margin-left:auto;}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;
+  background:var(--white);border-top:1px solid var(--border);
+  display:flex;align-items:stretch;
+  height:calc(var(--nav-h) + env(safe-area-inset-bottom));
+  padding-bottom:env(safe-area-inset-bottom);
+  z-index:100;box-shadow:0 -2px 12px rgba(83,74,183,.08);}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:3px;cursor:pointer;
+  color:var(--muted);font-size:10px;font-weight:500;
+  padding:8px 0;transition:color .15s;}
+.nav-item svg{transition:transform .15s;}
+.nav-item.active{color:var(--p600);}
+.nav-item.active svg{transform:scale(1.1);}
+.nav-item.active .nav-dot{background:var(--p600);}
+.nav-dot{width:4px;height:4px;border-radius:50%;background:transparent;transition:background .15s;}
+
+/* PAGES */
+.page{display:none;padding:16px;padding-bottom:8px;animation:fadeIn .18s ease;}
 .page.active{display:block;}
-.fade-in{animation:fadeIn .2s ease;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
 
 /* CARDS */
-.card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;}
-.card-header{font-size:12px;font-weight:500;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
-.card-header svg{color:var(--p400);}
+.card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;}
+.card-title{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:10px;
+  display:flex;align-items:center;gap:5px;text-transform:uppercase;letter-spacing:.04em;}
+.card-title svg{color:var(--p400);}
 
-/* STAT CARDS */
-.stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px;}
-.stat-card{border-radius:var(--radius);padding:12px 14px;}
+/* STAT ROW */
+.stat-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.stat-card{border-radius:12px;padding:12px 14px;}
 .stat-card.purple{background:var(--p50);}
 .stat-card.teal{background:var(--t50);}
 .stat-card.amber{background:var(--a50);}
-.stat-label{font-size:11px;font-weight:500;margin-bottom:4px;}
+.stat-card.coral{background:var(--c50);}
+.stat-label{font-size:11px;font-weight:600;margin-bottom:3px;}
 .stat-card.purple .stat-label{color:var(--p600);}
 .stat-card.teal .stat-label{color:var(--t600);}
 .stat-card.amber .stat-label{color:var(--a600);}
-.stat-value{font-size:22px;font-weight:500;line-height:1;}
+.stat-card.coral .stat-label{color:var(--c600);}
+.stat-value{font-size:26px;font-weight:600;line-height:1;}
 .stat-card.purple .stat-value{color:var(--p900);}
-.stat-card.teal .stat-value{color:var(--t900);}
+.stat-card.teal .stat-value{color:var(--t800);}
 .stat-card.amber .stat-value{color:var(--a900);}
-.stat-unit{font-size:11px;font-weight:400;opacity:.7;}
+.stat-card.coral .stat-value{color:var(--c800);}
+.stat-unit{font-size:12px;font-weight:400;opacity:.65;}
 
-/* CHARTS */
-.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
-.chart-wrap{position:relative;height:140px;}
+/* CHART */
+.chart-wrap{position:relative;height:160px;}
 
 /* INSIGHT */
-.insight{background:var(--a50);border-radius:var(--radius);padding:10px 14px;display:flex;gap:10px;align-items:flex-start;margin-bottom:16px;}
-.insight-icon{font-size:18px;flex-shrink:0;color:var(--a600);}
-.insight-title{font-size:12px;font-weight:500;color:var(--a800);margin-bottom:2px;}
+.insight{background:var(--a50);border-radius:12px;padding:12px 14px;
+  display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;}
+.insight-icon{font-size:20px;flex-shrink:0;}
+.insight-title{font-size:13px;font-weight:600;color:var(--a900);margin-bottom:2px;}
 .insight-text{font-size:12px;color:var(--a600);line-height:1.5;}
 
-/* BADGES */
-.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:500;}
-.badge.steady{background:var(--t50);color:var(--t800);border:0.5px solid var(--t100);}
-.badge.interval{background:var(--c50);color:var(--c800);border:0.5px solid var(--c100);}
-.badge.duurtest{background:var(--p50);color:var(--p800);border:0.5px solid var(--p100);}
-.badge.pr{background:var(--a50);color:var(--a800);border:0.5px solid var(--a100);}
+/* RIT CARDS (overzicht) */
+.rit-card{background:var(--white);border:1px solid var(--border);border-radius:14px;
+  padding:14px;margin-bottom:10px;position:relative;}
+.rit-card.is-pr{border-color:var(--a100);background:linear-gradient(135deg,#fffdf5 0%,var(--white) 100%);}
+.rit-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.rit-nr{font-size:13px;font-weight:600;color:var(--muted);}
+.rit-datum{font-size:13px;color:var(--muted);}
+.rit-afstand{font-size:28px;font-weight:700;color:var(--p900);line-height:1;}
+.rit-kmh{font-size:14px;color:var(--muted);margin-top:1px;}
+.rit-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:100px;font-size:11px;font-weight:600;}
+.badge.steady{background:var(--t50);color:var(--t800);border:1px solid var(--t100);}
+.badge.interval{background:var(--c50);color:var(--c800);border:1px solid var(--c100);}
+.badge.duurtest{background:var(--p50);color:var(--p800);border:1px solid var(--p100);}
+.badge.herstel{background:#f0f0f0;color:#555;border:1px solid #ddd;}
+.badge.pr{background:var(--a50);color:var(--a900);border:1px solid var(--a100);}
+.badge.stand{background:var(--p50);color:var(--p800);border:1px solid var(--p100);}
+.rit-notitie{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.4;}
+.rit-actions{display:flex;gap:6px;margin-top:8px;}
+.rit-btn{flex:1;border:1px solid var(--border);border-radius:8px;padding:7px;
+  font-size:12px;font-weight:500;background:var(--white);cursor:pointer;
+  font-family:var(--font);color:var(--muted);transition:all .15s;}
+.rit-btn.edit:active{background:var(--p50);color:var(--p600);border-color:var(--p200);}
+.rit-btn.del:active{background:var(--c50);color:var(--c600);border-color:var(--c100);}
+
+/* SEARCH */
+.search-wrap{margin-bottom:12px;}
+.search-box{width:100%;border:1px solid var(--border);border-radius:12px;
+  padding:11px 14px;font-family:var(--font);font-size:15px;
+  background:var(--white);outline:none;color:var(--text);}
+.search-box:focus{border-color:var(--p400);}
+.filter-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;
+  scrollbar-width:none;}
+.filter-row::-webkit-scrollbar{display:none;}
+.filter-pill{border:1px solid var(--border);border-radius:100px;padding:6px 14px;
+  font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer;
+  background:var(--white);color:var(--muted);transition:all .15s;font-family:var(--font);}
+.filter-pill.active{background:var(--p600);color:var(--white);border-color:var(--p600);}
 
 /* FORM */
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
-.form-group{display:flex;flex-direction:column;gap:4px;}
-.form-group label{font-size:11px;font-weight:500;color:var(--muted);}
+.form-section{font-size:12px;font-weight:600;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.05em;margin:16px 0 8px;}
+.form-group{margin-bottom:12px;}
+.form-group label{font-size:13px;font-weight:500;color:var(--text);display:block;margin-bottom:5px;}
 .form-group input,.form-group select,.form-group textarea{
-  border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;
-  font-family:var(--font);font-size:14px;color:var(--text);background:var(--p50);
-  outline:none;transition:border-color .15s;
-}
+  width:100%;border:1px solid var(--border);border-radius:12px;
+  padding:12px 14px;font-family:var(--font);font-size:15px;
+  color:var(--text);background:var(--white);outline:none;
+  transition:border-color .15s;-webkit-appearance:none;}
+.form-group select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6b8a' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;}
 .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--p400);}
-.form-group textarea{resize:vertical;min-height:60px;}
-.form-section-title{font-size:12px;font-weight:500;color:var(--muted);margin:12px 0 6px;display:flex;align-items:center;gap:5px;}
-.hs-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;}
-.hs-block{background:var(--p50);border-radius:var(--radius);padding:8px 10px;}
-.hs-block.warm{background:var(--a50);}
-.hs-block label{font-size:10px;font-weight:500;color:var(--p600);display:block;margin-bottom:4px;}
-.hs-block.warm label{color:var(--a600);}
-.hs-block input{border:1px solid var(--p100);border-radius:6px;padding:5px 8px;font-size:13px;color:var(--p900);background:var(--white);width:100%;outline:none;font-family:var(--font);}
-.hs-block.warm input{border-color:var(--a100);color:var(--a900);}
-.tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
-.tag{border:1px solid var(--border);border-radius:100px;padding:4px 12px;font-size:12px;cursor:pointer;transition:all .15s;color:var(--muted);background:var(--white);}
-.tag.active.geslapen{border-color:var(--t400);background:var(--t50);color:var(--t800);}
-.tag.active.warm{border-color:var(--c400);background:var(--c50);color:var(--c800);}
-.tag.active.moe{border-color:var(--a400);background:var(--a50);color:var(--a800);}
-.tag.active.hoofd{border-color:var(--p400);background:var(--p50);color:var(--p800);}
-.btn{border-radius:var(--radius);padding:10px 16px;font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;}
-.btn-primary{background:var(--p600);color:var(--p50);}
-.btn-primary:hover{background:var(--p800);}
-.btn-secondary{background:var(--white);color:var(--muted);border:1px solid var(--border);}
-.btn-secondary:hover{background:var(--p50);}
-.btn-success{background:var(--t400);color:var(--white);}
-.btn-row{display:flex;gap:8px;margin-top:4px;}
-.btn-row .btn-primary{flex:2;}
-.btn-row .btn-secondary{flex:1;}
+.form-group textarea{resize:none;height:80px;line-height:1.5;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.hs-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.hs-block{background:var(--p50);border-radius:12px;padding:10px 12px;}
+.hs-block.last{background:var(--a50);}
+.hs-block-label{font-size:10px;font-weight:600;color:var(--p600);margin-bottom:5px;}
+.hs-block.last .hs-block-label{color:var(--a600);}
+.hs-block input{border:1px solid var(--p100);border-radius:8px;padding:7px 8px;
+  font-size:14px;color:var(--p900);background:var(--white);
+  width:100%;outline:none;font-family:var(--font);}
+.hs-block.last input{border-color:var(--a100);color:var(--a900);}
 
-/* TABLE */
-.table-controls{display:flex;gap:8px;margin-bottom:12px;align-items:center;}
-.search-box{flex:1;border:1px solid var(--border);border-radius:var(--radius);padding:7px 12px;font-family:var(--font);font-size:13px;background:var(--white);outline:none;color:var(--text);}
-.search-box:focus{border-color:var(--p400);}
-.filter-btn{border:1px solid var(--border);border-radius:var(--radius);padding:7px 12px;font-size:12px;background:var(--white);cursor:pointer;color:var(--muted);font-family:var(--font);}
-.filter-btn.active{background:var(--p50);color:var(--p600);border-color:var(--p200);}
-.table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border);}
-table{width:100%;border-collapse:collapse;font-size:13px;}
-thead tr{background:var(--p50);}
-th{padding:8px 10px;text-align:left;font-size:11px;font-weight:500;color:var(--p600);white-space:nowrap;border-bottom:1px solid var(--border);}
-td{padding:8px 10px;border-bottom:0.5px solid var(--border);color:var(--text);white-space:nowrap;}
-tr:last-child td{border-bottom:none;}
-tr.pr-row{background:rgba(250,238,218,.3);}
-tr:hover td{background:var(--p50);}
-.tbl-actions{display:flex;gap:4px;}
-.tbl-btn{background:none;border:none;cursor:pointer;padding:3px 5px;border-radius:6px;color:var(--muted);font-size:14px;}
-.tbl-btn:hover{background:var(--p50);color:var(--p600);}
-.tbl-btn.del:hover{background:#FCEBEB;color:#A32D2D;}
-.table-footer{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;color:var(--muted);}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px;}
+.tag{border:1px solid var(--border);border-radius:100px;padding:7px 14px;
+  font-size:13px;cursor:pointer;color:var(--muted);background:var(--white);
+  font-family:var(--font);transition:all .15s;}
+.tag.active-goed{border-color:var(--t400);background:var(--t50);color:var(--t800);}
+.tag.active-warm{border-color:var(--c400);background:var(--c50);color:var(--c800);}
+.tag.active-moe{border-color:var(--a400);background:var(--a50);color:var(--a900);}
+.tag.active-hoofd{border-color:var(--p400);background:var(--p50);color:var(--p800);}
+.tag.active-slecht{border-color:#999;background:#f5f5f5;color:#444;}
+
+.pr-toggle{display:flex;align-items:center;gap:10px;padding:14px;
+  background:var(--a50);border-radius:12px;border:1px solid var(--a100);cursor:pointer;}
+.pr-toggle-text{font-size:14px;font-weight:500;color:var(--a900);}
+.pr-toggle input{width:20px;height:20px;accent-color:var(--a400);cursor:pointer;}
+
+.btn{width:100%;border-radius:12px;padding:14px;font-family:var(--font);
+  font-size:16px;font-weight:600;cursor:pointer;border:none;transition:all .15s;}
+.btn-primary{background:var(--p600);color:var(--white);}
+.btn-primary:active{background:var(--p800);}
+.btn-secondary{background:var(--white);color:var(--muted);border:1px solid var(--border);margin-bottom:10px;}
+.btn-secondary:active{background:var(--bg);}
+.btn-success{background:var(--t400);color:var(--white);}
+
+/* SUCCESS BANNER */
+.success-banner{background:var(--t50);border:1px solid var(--t100);border-radius:12px;
+  padding:12px 14px;margin-bottom:14px;font-size:14px;color:var(--t800);
+  font-weight:500;display:none;}
 
 /* ANALYSE */
-.advice-list{display:flex;flex-direction:column;gap:8px;}
-.advice{border-left:3px solid;padding:8px 12px;border-radius:0 var(--radius) var(--radius) 0;}
+.advice{border-left:3px solid;padding:10px 14px;border-radius:0 12px 12px 0;margin-bottom:8px;}
 .advice.green{border-color:var(--t400);background:var(--t50);}
-.advice.green .advice-title{color:var(--t800);}
-.advice.green .advice-text{color:var(--t600);}
+.advice.green .adv-title{color:var(--t800);}
+.advice.green .adv-text{color:var(--t600);}
 .advice.amber{border-color:var(--a400);background:var(--a50);}
-.advice.amber .advice-title{color:var(--a800);}
-.advice.amber .advice-text{color:var(--a600);}
+.advice.amber .adv-title{color:var(--a900);}
+.advice.amber .adv-text{color:var(--a600);}
 .advice.purple{border-color:var(--p400);background:var(--p50);}
-.advice.purple .advice-title{color:var(--p800);}
-.advice.purple .advice-text{color:var(--p600);}
+.advice.purple .adv-title{color:var(--p800);}
+.advice.purple .adv-text{color:var(--p600);}
 .advice.coral{border-color:var(--c400);background:var(--c50);}
-.advice.coral .advice-title{color:var(--c800);}
-.advice.coral .advice-text{color:var(--c600);}
-.advice-title{font-size:12px;font-weight:500;margin-bottom:2px;}
-.advice-text{font-size:12px;line-height:1.5;}
-.goal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
-.goal-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:12px;}
-.goal-label{font-size:11px;color:var(--muted);margin-bottom:6px;}
-.goal-bar{height:7px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:4px;}
-.goal-fill{height:100%;border-radius:4px;}
+.advice.coral .adv-title{color:var(--c800);}
+.advice.coral .adv-text{color:var(--c600);}
+.adv-title{font-size:13px;font-weight:600;margin-bottom:3px;}
+.adv-text{font-size:13px;line-height:1.5;}
+
+.goal-card{background:var(--white);border:1px solid var(--border);border-radius:12px;
+  padding:12px 14px;margin-bottom:8px;}
+.goal-label{font-size:12px;color:var(--muted);margin-bottom:6px;}
+.goal-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:5px;}
+.goal-fill{height:100%;border-radius:4px;transition:width .6s ease;}
 .goal-fill.purple{background:var(--p400);}
 .goal-fill.teal{background:var(--t400);}
-.goal-value{font-size:12px;color:var(--text);}
-.period-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:16px;}
-.period-week{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:10px;text-align:center;}
-.period-label{font-size:10px;color:var(--muted);margin-bottom:4px;}
-.period-bars{display:flex;gap:2px;align-items:flex-end;height:32px;justify-content:center;}
-.period-bar{width:10px;border-radius:2px 2px 0 0;}
-.period-bar.steady{background:var(--t400);}
-.period-bar.interval{background:var(--c400);}
+.goal-value{font-size:13px;font-weight:500;color:var(--text);}
 
 /* TOAST */
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--p800);color:var(--p50);padding:10px 20px;border-radius:100px;font-size:13px;transition:transform .25s ease;z-index:999;pointer-events:none;}
-.toast.show{transform:translateX(-50%) translateY(0);}
+.toast{position:fixed;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 12px);
+  left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--p900);color:var(--p50);padding:11px 22px;
+  border-radius:100px;font-size:14px;font-weight:500;
+  opacity:0;transition:all .25s ease;z-index:999;pointer-events:none;
+  white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
 /* LOADING */
-.loading{text-align:center;padding:40px;color:var(--muted);font-size:13px;}
-.spinner{width:24px;height:24px;border:2px solid var(--p100);border-top-color:var(--p600);border-radius:50%;animation:spin .6s linear infinite;margin:0 auto 10px;}
+.loading{display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:48px 20px;color:var(--muted);}
+.spinner{width:28px;height:28px;border:2.5px solid var(--p100);
+  border-top-color:var(--p600);border-radius:50%;
+  animation:spin .65s linear infinite;margin-bottom:12px;}
 @keyframes spin{to{transform:rotate(360deg);}}
-
-/* EMPTY */
-.empty{text-align:center;padding:40px;color:var(--muted);}
-.empty-icon{font-size:32px;margin-bottom:8px;opacity:.4;}
+.empty{text-align:center;padding:48px 20px;color:var(--muted);}
+.empty-icon{font-size:36px;margin-bottom:8px;}
 </style>
 </head>
 <body>
 
-<nav class="navbar">
-  <div class="navbar-brand">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-title">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
     FietsTracker
   </div>
-  <div class="nav-tabs">
-    <div class="nav-tab active" data-page="dashboard">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-      Dashboard
-    </div>
-    <div class="nav-tab" data-page="invoer">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
-      Rit toevoegen
-    </div>
-    <div class="nav-tab" data-page="overzicht">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-      Overzicht
-    </div>
-    <div class="nav-tab" data-page="analyse">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      Analyse
-    </div>
+  <div class="topbar-sub" id="topbar-sub">15 ritten</div>
+</div>
+
+<!-- PAGES -->
+<div class="page active" id="page-dashboard"></div>
+<div class="page" id="page-invoer"></div>
+<div class="page" id="page-overzicht"></div>
+<div class="page" id="page-analyse"></div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <div class="nav-item active" data-page="dashboard">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+    <div class="nav-dot"></div>
+    Dashboard
+  </div>
+  <div class="nav-item" data-page="invoer">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+    <div class="nav-dot"></div>
+    Rit toevoegen
+  </div>
+  <div class="nav-item" data-page="overzicht">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+    <div class="nav-dot"></div>
+    Overzicht
+  </div>
+  <div class="nav-item" data-page="analyse">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    <div class="nav-dot"></div>
+    Analyse
   </div>
 </nav>
 
-<!-- DASHBOARD -->
-<div class="page active fade-in" id="page-dashboard">
-  <div class="stat-grid" id="stat-grid">
-    <div class="stat-card purple"><div class="stat-label">Totaal ritten</div><div class="stat-value" id="s-totaal">—</div></div>
-    <div class="stat-card teal"><div class="stat-label">Beste afstand</div><div class="stat-value" id="s-beste">—<span class="stat-unit"> km</span></div></div>
-    <div class="stat-card purple"><div class="stat-label">Gem. snelheid</div><div class="stat-value" id="s-gem">—<span class="stat-unit"> km/u</span></div></div>
-    <div class="stat-card amber"><div class="stat-label">PR's behaald</div><div class="stat-value" id="s-pr">—</div></div>
-  </div>
+<div class="toast" id="toast"></div>
 
-  <div class="card" style="margin-bottom:12px;">
-    <div class="card-header">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      Snelheidsontwikkeling per rit
-    </div>
-    <div class="chart-wrap"><canvas id="chart-speed"></canvas></div>
-    <div style="display:flex;gap:14px;margin-top:8px;">
-      <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);"><span style="width:12px;height:3px;background:var(--t400);border-radius:2px;display:inline-block;"></span>Steady-state</span>
-      <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);"><span style="width:12px;height:3px;background:var(--c400);border-radius:2px;display:inline-block;"></span>Interval</span>
-      <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);"><span style="width:8px;height:8px;background:var(--a400);border-radius:50%;display:inline-block;"></span>PR</span>
-    </div>
-  </div>
+<script>
+const SUPA_URL='https://wvtvcfmdkyzuptnuawuy.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind2dHZjZm1ka3l6dXB0bnVhd3V5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2ODQ1MzMsImV4cCI6MjA5NjI2MDUzM30.CjeDeMdy7n3V2w-vy7G3PnEY2nzwTEWZ4fGxfiiI-w0';
+const H={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'};
 
-  <div class="chart-grid">
+let ritten=[], activeTags=new Set(), editId=null, activeFilter='all';
+let chartSpeed, chartHerstel, chartRpe;
+
+const SEED=[
+  {datum:'2025-03-01',rit_nummer:1,afstand_km:15.30,tijd_min:30,weerstand:10,type_rit:'steady-state',hs_0_10:'137-141',hs_10_20:'137-141',hs_20_30:'137-141',herstel_sec:null,rpe:null,omstandigheden:'',notities:'Eerste rit',is_pr:false},
+  {datum:'2025-03-05',rit_nummer:2,afstand_km:15.38,tijd_min:30,weerstand:10,type_rit:'steady-state',hs_0_10:'<140',hs_10_20:'<140',hs_20_30:'iets boven 140',herstel_sec:52,rpe:null,omstandigheden:'',notities:'',is_pr:false},
+  {datum:'2025-03-08',rit_nummer:3,afstand_km:15.48,tijd_min:30,weerstand:10,type_rit:'steady-state',hs_0_10:'<140',hs_10_20:'<140',hs_20_30:'~143',herstel_sec:64,rpe:null,omstandigheden:'',notities:'',is_pr:false},
+  {datum:'2025-03-12',rit_nummer:4,afstand_km:15.21,tijd_min:30,weerstand:11,type_rit:'interval',hs_0_10:'pieken 150-160',hs_10_20:'pieken 150-160',hs_20_30:'dalen <140',herstel_sec:49,rpe:null,omstandigheden:'',notities:'3 pieken 35,2–36 km/u',is_pr:false},
+  {datum:'2025-03-15',rit_nummer:5,afstand_km:15.53,tijd_min:30,weerstand:11,type_rit:'steady-state',hs_0_10:'<130',hs_10_20:'<140',hs_20_30:'140-146',herstel_sec:72,rpe:null,omstandigheden:'',notities:'Nieuwe PR — constant niveau 11',is_pr:true},
+  {datum:'2025-03-19',rit_nummer:6,afstand_km:15.68,tijd_min:30,weerstand:11,type_rit:'steady-state',hs_0_10:'<130',hs_10_20:'<140',hs_20_30:'140-146',herstel_sec:72,rpe:null,omstandigheden:'',notities:'',is_pr:false},
+  {datum:'2025-03-22',rit_nummer:7,afstand_km:15.27,tijd_min:30,weerstand:12,type_rit:'interval',hs_0_10:'pieken 150-160',hs_10_20:'pieken 150-160',hs_20_30:'<140',herstel_sec:49,rpe:null,omstandigheden:'',notities:'3 pieken 35+ km/u',is_pr:false},
+  {datum:'2025-03-26',rit_nummer:8,afstand_km:15.81,tijd_min:30,weerstand:11,type_rit:'steady-state',hs_0_10:'<130',hs_10_20:'<140',hs_20_30:'>145',herstel_sec:84,rpe:null,omstandigheden:'',notities:'Nieuwe PR',is_pr:true},
+  {datum:'2025-03-29',rit_nummer:9,afstand_km:14.86,tijd_min:30,weerstand:11,type_rit:'interval',hs_0_10:'pieken 150-160',hs_10_20:'dalen 120-125',hs_20_30:'dalen 120-125',herstel_sec:32,rpe:null,omstandigheden:'',notities:'Bewust rustig aan gedaan',is_pr:false},
+  {datum:'2025-04-02',rit_nummer:10,afstand_km:15.89,tijd_min:30,weerstand:11,type_rit:'steady-state',hs_0_10:'<140',hs_10_20:'<140',hs_20_30:'~145',herstel_sec:65,rpe:null,omstandigheden:'',notities:'Nieuwe PR',is_pr:true},
+  {datum:'2025-04-05',rit_nummer:11,afstand_km:15.72,tijd_min:30,weerstand:12,type_rit:'steady-state',hs_0_10:'<140',hs_10_20:'140-145',hs_20_30:'145-150',herstel_sec:59,rpe:null,omstandigheden:'',notities:'',is_pr:false},
+  {datum:'2025-04-09',rit_nummer:12,afstand_km:15.99,tijd_min:30,weerstand:11,type_rit:'duurtest',hs_0_10:'>140',hs_10_20:'150-155',hs_20_30:'150-155',herstel_sec:93,rpe:null,omstandigheden:'hoofdpijn,slecht_geslapen',notities:'Nieuwe PR — hoofdpijn, kort geslapen',is_pr:true},
+  {datum:'2025-04-12',rit_nummer:13,afstand_km:15.28,tijd_min:30,weerstand:12,type_rit:'interval',hs_0_10:'~146',hs_10_20:'~146',hs_20_30:'~146',herstel_sec:80,rpe:null,omstandigheden:'',notities:'3 pieken boven 35 km/u — gem 146 bpm',is_pr:false},
+  {datum:'2025-04-16',rit_nummer:14,afstand_km:15.98,tijd_min:30,weerstand:11,type_rit:'steady-state',hs_0_10:'<140',hs_10_20:'<145',hs_20_30:'>150',herstel_sec:72,rpe:null,omstandigheden:'',notities:'Nieuwe PR — ademhalingstechniek',is_pr:true},
+  {datum:'2025-06-05',rit_nummer:15,afstand_km:15.99,tijd_min:30,weerstand:11,type_rit:'steady-state',hs_0_10:'<140',hs_10_20:'rondom 140',hs_20_30:'140-150',herstel_sec:104,rpe:null,omstandigheden:'warm',notities:'Zweten — warm. Gedeelde PR',is_pr:false},
+];
+
+// API
+async function api(path,opts={}){
+  const r=await fetch(SUPA_URL+'/rest/v1/'+path,{headers:H,...opts});
+  if(!r.ok)throw new Error(await r.text());
+  return r.status===204?null:r.json();
+}
+
+async function laadRitten(){
+  try{
+    const d=await api('fiets_ritten?select=*&order=rit_nummer.asc');
+    if(d&&d.length>0){ritten=d;}
+    else{const ins=await api('fiets_ritten',{method:'POST',body:JSON.stringify(SEED)});ritten=ins||SEED;toon('15 ritten geladen ✓');}
+  }catch(e){ritten=SEED;toon('Offline — lokale data');}
+  document.getElementById('topbar-sub').textContent=ritten.length+' ritten';
+}
+
+// HELPERS
+function kmh(r){return ((+r.afstand_km||0)/((+r.tijd_min||30)/60)).toFixed(2);}
+function fmtHerstel(s){if(!s)return'—';const m=Math.floor(s/60),sec=s%60;return m>0?m+'m '+sec+'s':sec+'s';}
+function fmtDatum(d){if(!d)return'—';return new Date(d).toLocaleDateString('nl-NL',{day:'2-digit',month:'2-digit'});}
+function parsHerstel(s){
+  if(!s)return null;
+  const m1=s.match(/(\d+)\s*m[ia]?n?\s*(\d+)/i);if(m1)return +m1[1]*60+ +m1[2];
+  const m2=s.match(/(\d+)\s*s/i);if(m2)return +m2[1];
+  const m3=s.match(/^(\d+)$/);if(m3)return +m3[1];
+  return null;
+}
+
+// TOAST
+function toon(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+// NAVIGATE
+function navigate(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelector('[data-page="'+page+'"]').classList.add('active');
+  if(page==='dashboard')renderDashboard();
+  if(page==='overzicht')renderOverzicht();
+  if(page==='analyse')renderAnalyse();
+  if(page==='invoer')renderInvoer();
+}
+document.querySelectorAll('.nav-item').forEach(n=>{
+  n.addEventListener('click',()=>navigate(n.dataset.page));
+});
+
+// ── DASHBOARD ────────────────────────────────────────────
+function renderDashboard(){
+  const el=document.getElementById('page-dashboard');
+  if(!ritten.length){el.innerHTML='<div class="loading"><div class="spinner"></div>Laden...</div>';return;}
+  const prs=ritten.filter(r=>r.is_pr);
+  const beste=Math.max(...ritten.map(r=>+r.afstand_km||0));
+  const gem=(ritten.reduce((a,r)=>a+((+r.afstand_km||0)/((+r.tijd_min||30)/60)),0)/ritten.length).toFixed(2);
+  const laaste=ritten[ritten.length-1];
+  const eerste=ritten[0];
+  const verb=((+laaste.afstand_km-+eerste.afstand_km)/+eerste.afstand_km*100).toFixed(1);
+
+  el.innerHTML=`
+    <div class="stat-row">
+      <div class="stat-card purple"><div class="stat-label">Totaal ritten</div><div class="stat-value">${ritten.length}</div></div>
+      <div class="stat-card teal"><div class="stat-label">Beste afstand</div><div class="stat-value">${beste.toFixed(2)}<span class="stat-unit"> km</span></div></div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-card amber"><div class="stat-label">Gem. snelheid</div><div class="stat-value">${gem}<span class="stat-unit"> km/u</span></div></div>
+      <div class="stat-card coral"><div class="stat-label">PR's behaald</div><div class="stat-value">${prs.length}<span class="stat-unit"> keer</span></div></div>
+    </div>
     <div class="card">
-      <div class="card-header">Hersteltijd (seconden)</div>
-      <div class="chart-wrap"><canvas id="chart-herstel"></canvas></div>
+      <div class="card-title">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Snelheidsontwikkeling
+      </div>
+      <div class="chart-wrap"><canvas id="c-speed"></canvas></div>
+      <div style="display:flex;gap:12px;margin-top:8px;">
+        <span style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;"><span style="width:10px;height:3px;background:var(--t400);border-radius:2px;display:inline-block;"></span>Steady</span>
+        <span style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;"><span style="width:10px;height:3px;background:var(--c400);border-radius:2px;display:inline-block;"></span>Interval</span>
+        <span style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:var(--a400);border-radius:50%;display:inline-block;"></span>PR</span>
+      </div>
     </div>
     <div class="card">
-      <div class="card-header">Hartslag zone verdeling</div>
-      <div class="chart-wrap"><canvas id="chart-hs"></canvas></div>
+      <div class="card-title">Hersteltijd naar 119 bpm</div>
+      <div class="chart-wrap"><canvas id="c-herstel"></canvas></div>
     </div>
-  </div>
+    <div class="insight">
+      <div class="insight-icon">💡</div>
+      <div>
+        <div class="insight-title">Progressie +${verb}% t.o.v. rit 1</div>
+        <div class="insight-text">Beste afstand ${beste.toFixed(2)} km · ${prs.length} persoonlijke records · Gemiddeld ${gem} km/u</div>
+      </div>
+    </div>`;
 
-  <div class="insight" id="dash-insight">
-    <div class="insight-icon">💡</div>
-    <div><div class="insight-title">Inzicht laden...</div></div>
-  </div>
-</div>
+  // Speed chart
+  const labels=ritten.map(r=>'R'+r.rit_nummer);
+  const speeds=ritten.map(r=>+kmh(r));
+  const ptBg=ritten.map(r=>r.type_rit==='interval'?'#D85A30':'#1D9E75');
+  const ptR=ritten.map(r=>r.is_pr?7:4);
+  const ptBorder=ritten.map(r=>r.is_pr?'#BA7517':'transparent');
+  if(chartSpeed)chartSpeed.destroy();
+  chartSpeed=new Chart(document.getElementById('c-speed'),{
+    type:'line',
+    data:{labels,datasets:[{data:speeds,borderColor:'#7F77DD',borderWidth:2,pointBackgroundColor:ptBg,pointRadius:ptR,pointBorderColor:ptBorder,pointBorderWidth:2,tension:.35,fill:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9}},grid:{display:false}},y:{ticks:{font:{size:9}},grid:{color:'#F0EFF9'}}}}
+  });
 
-<!-- INVOER -->
-<div class="page fade-in" id="page-invoer">
-  <div class="card">
-    <div id="invoer-success" style="display:none;background:var(--t50);border:1px solid var(--t100);border-radius:var(--radius);padding:10px 14px;margin-bottom:14px;font-size:13px;color:var(--t800);font-weight:500;">
-      ✓ Rit opgeslagen!
+  // Herstel chart
+  const hr=ritten.filter(r=>r.herstel_sec);
+  if(chartHerstel)chartHerstel.destroy();
+  chartHerstel=new Chart(document.getElementById('c-herstel'),{
+    type:'bar',
+    data:{labels:hr.map(r=>'R'+r.rit_nummer),datasets:[{data:hr.map(r=>r.herstel_sec),backgroundColor:hr.map(r=>r.type_rit==='interval'?'#F0997B':'#5DCAA5'),borderRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9}},grid:{display:false}},y:{ticks:{font:{size:9}},grid:{color:'#F0EFF9'}}}}
+  });
+}
+
+// ── INVOER ────────────────────────────────────────────────
+function renderInvoer(){
+  const el=document.getElementById('page-invoer');
+  const nr=editId?ritten.find(r=>r.id===editId)?.rit_nummer:(ritten.length+1);
+  const today=new Date().toISOString().split('T')[0];
+  el.innerHTML=`
+    <div class="success-banner" id="inv-ok">✓ Rit opgeslagen!</div>
+    <div style="background:var(--t50);border-radius:12px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--t600)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span style="font-size:13px;color:var(--t800);font-weight:500;">${editId?'Rit bewerken':'Rit '+nr+' — '+new Date().toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long'})}</span>
     </div>
-
-    <div style="background:var(--t50);border-radius:var(--radius);padding:8px 12px;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--t600);flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      <span style="font-size:12px;color:var(--t800);font-weight:500;" id="invoer-datum-label">Vandaag</span>
-    </div>
-
-    <div class="form-grid">
-      <div class="form-group"><label>Datum</label><input type="date" id="f-datum"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Datum</label><input type="date" id="f-datum" value="${today}"></div>
       <div class="form-group"><label>Afstand (km)</label><input type="number" step="0.01" id="f-afstand" placeholder="15,47"></div>
     </div>
-    <div class="form-grid">
-      <div class="form-group"><label>Weerstand (stand)</label><input type="number" id="f-weerstand" placeholder="11" min="1" max="25"></div>
-      <div class="form-group">
-        <label>Type rit</label>
+    <div class="form-row">
+      <div class="form-group"><label>Weerstand</label><input type="number" id="f-weerstand" placeholder="11" min="1" max="25"></div>
+      <div class="form-group"><label>Type rit</label>
         <select id="f-type">
           <option value="steady-state">Steady-state</option>
           <option value="interval">Interval</option>
@@ -272,528 +442,263 @@ tr:hover td{background:var(--p50);}
         </select>
       </div>
     </div>
-
-    <div class="form-section-title">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-      Hartslag per blok
+    <div class="form-section">Hartslag per blok</div>
+    <div class="hs-row" style="margin-bottom:12px;">
+      <div class="hs-block"><div class="hs-block-label">0–10 min</div><input type="text" id="f-hs1" placeholder="&lt; 130"></div>
+      <div class="hs-block"><div class="hs-block-label">10–20 min</div><input type="text" id="f-hs2" placeholder="&lt; 140"></div>
+      <div class="hs-block last"><div class="hs-block-label">20–30 min</div><input type="text" id="f-hs3" placeholder="140–146"></div>
     </div>
-    <div class="hs-grid">
-      <div class="hs-block"><label>0–10 min</label><input type="text" id="f-hs1" placeholder="&lt; 130"></div>
-      <div class="hs-block"><label>10–20 min</label><input type="text" id="f-hs2" placeholder="&lt; 140"></div>
-      <div class="hs-block warm"><label>20–30 min</label><input type="text" id="f-hs3" placeholder="140–146"></div>
-    </div>
-
-    <div class="form-grid">
+    <div class="form-row">
       <div class="form-group"><label>Herstel naar 119 bpm</label><input type="text" id="f-herstel" placeholder="1 min 12 sec"></div>
-      <div class="form-group">
-        <label>RPE (1–10 — ervaren inspanning)</label>
+      <div class="form-group"><label>RPE (1–10)</label>
         <select id="f-rpe">
           <option value="">— kies —</option>
-          <option value="1">1 — heel licht</option>
-          <option value="2">2</option><option value="3">3</option>
-          <option value="4">4 — licht</option>
-          <option value="5">5</option>
-          <option value="6">6 — matig</option>
-          <option value="7">7</option>
-          <option value="8">8 — zwaar</option>
-          <option value="9">9</option>
-          <option value="10">10 — maximaal</option>
+          ${[1,2,3,4,5,6,7,8,9,10].map(i=>`<option value="${i}">${i}</option>`).join('')}
         </select>
       </div>
     </div>
-
-    <div class="form-section-title">Omstandigheden</div>
-    <div class="tags">
-      <div class="tag" data-tag="goed_geslapen" data-cls="geslapen">Goed geslapen</div>
-      <div class="tag" data-tag="slecht_geslapen" data-cls="geslapen">Slecht geslapen</div>
+    <div class="form-section">Omstandigheden</div>
+    <div class="tags" id="tags-wrap">
+      <div class="tag" data-tag="goed_geslapen" data-cls="goed">Goed geslapen</div>
+      <div class="tag" data-tag="slecht_geslapen" data-cls="slecht">Slecht geslapen</div>
       <div class="tag" data-tag="warm" data-cls="warm">Warm</div>
       <div class="tag" data-tag="vermoeid" data-cls="moe">Vermoeid</div>
       <div class="tag" data-tag="hoofdpijn" data-cls="hoofd">Hoofdpijn</div>
     </div>
-
-    <div class="form-group" style="margin-bottom:14px;">
-      <label>Opmerkingen</label>
-      <textarea id="f-notities" placeholder="Bijv. ademhalingstechniek toegepast, nieuwe PR, pieken boven 35 km/u..."></textarea>
+    <div class="form-group" style="margin-top:12px;"><label>Opmerkingen</label>
+      <textarea id="f-notities" placeholder="Ademhalingstechniek, bijzonderheden..."></textarea>
     </div>
+    <label class="pr-toggle" style="margin-bottom:16px;">
+      <input type="checkbox" id="f-pr">
+      <div class="pr-toggle-text">🏆 Dit is een persoonlijk record</div>
+    </label>
+    <button class="btn btn-secondary" onclick="resetForm()">Wissen</button>
+    <button class="btn btn-primary" onclick="slaOp()">Rit opslaan</button>`;
 
-    <div class="form-group" style="flex-direction:row;align-items:center;gap:8px;margin-bottom:16px;">
-      <input type="checkbox" id="f-pr" style="width:16px;height:16px;accent-color:var(--a400);">
-      <label for="f-pr" style="font-size:13px;color:var(--text);cursor:pointer;">Dit is een persoonlijk record (PR) 🏆</label>
-    </div>
-
-    <div class="btn-row">
-      <button class="btn btn-secondary" onclick="resetForm()">Wissen</button>
-      <button class="btn btn-primary" onclick="slaRitOp()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-        Rit opslaan
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- OVERZICHT -->
-<div class="page fade-in" id="page-overzicht">
-  <div class="table-controls">
-    <input class="search-box" type="text" id="tbl-search" placeholder="Zoeken op type, stand, opmerking..." oninput="filterTabel()">
-    <button class="filter-btn active" data-filter="all" onclick="setFilter(this,'all')">Alle</button>
-    <button class="filter-btn" data-filter="steady-state" onclick="setFilter(this,'steady-state')">Steady</button>
-    <button class="filter-btn" data-filter="interval" onclick="setFilter(this,'interval')">Interval</button>
-    <button class="filter-btn" data-filter="pr" onclick="setFilter(this,'pr')">PR's</button>
-  </div>
-  <div class="table-wrap">
-    <table id="ritten-tabel">
-      <thead>
-        <tr>
-          <th>#</th><th>Datum</th><th>Afstand</th><th>Km/u</th>
-          <th>Stand</th><th>Type</th><th>Herstel</th><th>RPE</th>
-          <th>Notities</th><th></th>
-        </tr>
-      </thead>
-      <tbody id="tabel-body">
-        <tr><td colspan="10"><div class="loading"><div class="spinner"></div>Ritten laden...</div></td></tr>
-      </tbody>
-    </table>
-  </div>
-  <div class="table-footer">
-    <span id="tbl-count">— ritten</span>
-    <button class="filter-btn" onclick="exportCSV()">↓ Exporteer CSV</button>
-  </div>
-</div>
-
-<!-- ANALYSE -->
-<div class="page fade-in" id="page-analyse">
-  <div class="card" style="margin-bottom:12px;">
-    <div class="card-header">Periodisering — trainingsbelasting per week</div>
-    <div class="period-grid" id="period-grid">
-      <div class="loading"><div class="spinner"></div></div>
-    </div>
-  </div>
-
-  <div class="goal-grid">
-    <div class="goal-card">
-      <div class="goal-label">Doelafstand (doel: 16,50 km)</div>
-      <div class="goal-bar"><div class="goal-fill purple" id="goal-afstand" style="width:0%"></div></div>
-      <div class="goal-value" id="goal-afstand-val">—</div>
-    </div>
-    <div class="goal-card">
-      <div class="goal-label">Gem. herstel verbetering</div>
-      <div class="goal-bar"><div class="goal-fill teal" id="goal-herstel" style="width:0%"></div></div>
-      <div class="goal-value" id="goal-herstel-val">—</div>
-    </div>
-  </div>
-
-  <div class="card" style="margin-bottom:12px;">
-    <div class="card-header">RPE vs snelheid — inspanning & output</div>
-    <div class="chart-wrap"><canvas id="chart-rpe"></canvas></div>
-  </div>
-
-  <div class="card">
-    <div class="card-header">Sportinstructeur adviezen</div>
-    <div class="advice-list" id="advice-list">
-      <div class="loading"><div class="spinner"></div>Analyse laden...</div>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<script>
-const SUPA_URL = 'https://wvtvcfmdkyzuptnuawuy.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind2dHZjZm1ka3l6dXB0bnVhd3V5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2ODQ1MzMsImV4cCI6MjA5NjI2MDUzM30.CjeDeMdy7n3V2w-vy7G3PnEY2nzwTEWZ4fGxfiiI-w0';
-const HEADERS = {'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'};
-
-let alleRitten = [];
-let activeFilter = 'all';
-let activeTags = new Set();
-let editId = null;
-let speedChart, herstelChart, hsChart, rpeChart;
-
-// ── SEED DATA ──────────────────────────────────────────────────────
-const SEED = [
-  {datum:'2025-03-01',rit_nummer:1,afstand_km:15.30,tijd_min:30,weerstand:10,type_rit:'steady-state',hs_0_10:'137-141',hs_10_20:'137-141',hs_20_30:'137-141',herstel_sec:null,rpe:null,omstandigheden:'',notities:'Eerste rit',is_pr:false},
-  {datum:'2025-03-05',rit_nummer:2,afstand_km:15.38,tijd_min:30,weerstand:10,type_rit:'steady-state',hs_0_10:'<140',hs_10_20:'<140',hs_20_30:'iets boven 140',herstel_sec:52,rpe:null,omstandigheden:'',notities:'',is_pr:false},
-  {datum:'2025-03-08',rit_nummer:3,afstand_km:15.48,tijd_min:30,weerstand:10,type_rit:'steady-state',hs_0_10:'<140',hs_10_20:'<140',hs_20_30:'~143',herstel_sec:64,rpe:null,omstandigheden:'',notities:'',is_pr:false},
-  {datum:'2025-03-12',rit_nummer:4,afstand_km:15.21,tijd_min:30,weerstand:11,type_rit:'interval',hs_0_10:'140-160',hs_10_20:'140-160',hs_20_30:'140-160',herstel_sec:49,rpe:null,omstandigheden:'',notities:'3 pieken 35,2-36 km/u',is_pr:false},
-  {datum:'2025-03-15',rit_nummer:5,afstand_km:15.53,tijd_min:30,weerstand:11,type_rit:'steady-state',hs_0_10:'<130',hs_10_20:'<140',hs_20_30:'140-146',herstel_sec:72,rpe:null,omstandigheden:'',notities:'Nieuwe PR — constant niveau 11',is_pr:true},
-  {datum:'2025-03-19',rit_nummer:6,afstand_km:15.68,tijd_min:30,weerstand:11,type_rit:'steady-state',hs_0_10:'<130',hs_10_20:'<140',hs_20_30:'140-146',herstel_sec:72,rpe:null,omstandigheden:'',notities:'',is_pr:false},
-  {datum:'2025-03-22',rit_nummer:7,afstand_km:15.27,tijd_min:30,weerstand:12,type_rit:'interval',hs_0_10:'150-160',hs_10_20:'150-160',hs_20_30:'<140',herstel_sec:49,rpe:null,omstandigheden:'',notities:'3 pieken 35+ km/u',is_pr:false},
-  {datum:'2025-03-26',rit_nummer:8,afstand_km:15.81,tijd_min:30,weerstand:11,type_rit:'steady-state',hs_0_10:'<130',hs_10_20:'<140',hs_20_30:'>145',herstel_sec:84,rpe:null,omstandigheden:'',notities:'Nieuwe PR',is_pr:true},
-  {datum:'2025-03-29',rit_nummer:9,afstand_km:14.86,tijd_min:30,weerstand:11,type_rit:'interval',hs_0_10:'150-160',hs_10_20:'120-125',hs_20_30:'120-125',herstel_sec:32,rpe:null,omstandigheden:'',notities:'Bewust rustig aan gedaan',is_pr:false},
-  {datum:'2025-04-02',rit_nummer:10,afstand_km:15.89,tijd_min:30,weerstand:11,type_rit:'steady-state',hs_0_10:'<140',hs_10_20:'<140',hs_20_30:'~145',herstel_sec:65,rpe:null,omstandigheden:'',notities:'Nieuwe PR',is_pr:true},
-  {datum:'2025-04-05',rit_nummer:11,afstand_km:15.72,tijd_min:30,weerstand:12,type_rit:'steady-state',hs_0_10:'<140',hs_10_20:'140-145',hs_20_30:'145-150',herstel_sec:59,rpe:null,omstandigheden:'',notities:'',is_pr:false},
-  {datum:'2025-04-09',rit_nummer:12,afstand_km:15.99,tijd_min:30,weerstand:11,type_rit:'duurtest',hs_0_10:'>140',hs_10_20:'150-155',hs_20_30:'150-155',herstel_sec:93,rpe:null,omstandigheden:'hoofdpijn,slecht_geslapen',notities:'Nieuwe PR — hoofdpijn, kort geslapen',is_pr:true},
-  {datum:'2025-04-12',rit_nummer:13,afstand_km:15.28,tijd_min:30,weerstand:12,type_rit:'interval',hs_0_10:'~146',hs_10_20:'~146',hs_20_30:'~146',herstel_sec:80,rpe:null,omstandigheden:'',notities:'3 pieken boven 35 km/u — gem 146 bpm',is_pr:false},
-  {datum:'2025-04-16',rit_nummer:14,afstand_km:15.98,tijd_min:30,weerstand:11,type_rit:'steady-state',hs_0_10:'<140',hs_10_20:'<145',hs_20_30:'>150',herstel_sec:72,rpe:null,omstandigheden:'',notities:'Nieuwe PR — ademhalingstechniek toegepast',is_pr:true},
-  {datum:'2025-06-05',rit_nummer:15,afstand_km:15.99,tijd_min:30,weerstand:11,type_rit:'steady-state',hs_0_10:'<140',hs_10_20:'rondom 140',hs_20_30:'140-150',herstel_sec:104,rpe:null,omstandigheden:'warm',notities:'Zweten — warm. Gedeelde PR',is_pr:false},
-];
-
-// ── API ──────────────────────────────────────────────────────────
-async function apiFetch(path,opts={}){
-  const r = await fetch(SUPA_URL+'/rest/v1/'+path,{headers:HEADERS,...opts});
-  if(!r.ok) throw new Error(await r.text());
-  return r.status===204?null:r.json();
-}
-
-async function laadRitten(){
-  try{
-    const data = await apiFetch('fiets_ritten?select=*&order=rit_nummer.asc');
-    if(data && data.length>0){
-      alleRitten = data;
-    } else {
-      await seedData();
-    }
-  } catch(e){
-    toon('Kon ritten niet laden — controleer verbinding');
-  }
-}
-
-async function seedData(){
-  try{
-    const inserted = await apiFetch('fiets_ritten',{method:'POST',body:JSON.stringify(SEED)});
-    alleRitten = inserted || SEED;
-    toon('15 ritten geladen als startdata');
-  } catch(e){
-    alleRitten = SEED;
-  }
-}
-
-// ── DASHBOARD ────────────────────────────────────────────────────
-function renderDashboard(){
-  if(!alleRitten.length) return;
-  const steady = alleRitten.filter(r=>r.type_rit==='steady-state'||r.type_rit==='duurtest');
-  const prs = alleRitten.filter(r=>r.is_pr);
-  const beste = Math.max(...alleRitten.map(r=>+r.afstand_km||0));
-  const gem = alleRitten.reduce((a,r)=>a+(+r.afstand_km||0)/((+r.tijd_min||30)/60),0)/alleRitten.length;
-
-  document.getElementById('s-totaal').textContent = alleRitten.length;
-  document.getElementById('s-beste').innerHTML = beste.toFixed(2)+'<span class="stat-unit"> km</span>';
-  document.getElementById('s-gem').innerHTML = gem.toFixed(2)+'<span class="stat-unit"> km/u</span>';
-  document.getElementById('s-pr').textContent = prs.length;
-
-  // Speed chart
-  const labels = alleRitten.map(r=>'R'+r.rit_nummer);
-  const speeds = alleRitten.map(r=>((+r.afstand_km||0)/((+r.tijd_min||30)/60)).toFixed(2));
-  const ptColors = alleRitten.map(r=>r.type_rit==='interval'?'#D85A30':'#1D9E75');
-  const ptRadius = alleRitten.map(r=>r.is_pr?7:4);
-  const ptBorder = alleRitten.map(r=>r.is_pr?'#BA7517':'transparent');
-
-  if(speedChart) speedChart.destroy();
-  speedChart = new Chart(document.getElementById('chart-speed'),{
-    type:'line',
-    data:{labels,datasets:[{data:speeds,borderColor:'#7F77DD',borderWidth:2,pointBackgroundColor:ptColors,pointRadius:ptRadius,pointBorderColor:ptBorder,pointBorderWidth:2,tension:.35,fill:false}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'  '+ctx.raw+' km/u'}}},scales:{x:{ticks:{font:{size:10}},grid:{display:false}},y:{ticks:{font:{size:10}},grid:{color:'#F0EFF9'}}}}
-  });
-
-  // Herstel chart
-  const herstelRitten = alleRitten.filter(r=>r.herstel_sec);
-  if(herstelChart) herstelChart.destroy();
-  herstelChart = new Chart(document.getElementById('chart-herstel'),{
-    type:'bar',
-    data:{labels:herstelRitten.map(r=>'R'+r.rit_nummer),datasets:[{data:herstelRitten.map(r=>r.herstel_sec),backgroundColor:herstelRitten.map(r=>r.type_rit==='interval'?'#F0997B':'#5DCAA5'),borderRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10}},grid:{display:false}},y:{ticks:{font:{size:10}},grid:{color:'#F0EFF9'}}}}
-  });
-
-  // Hartslag zones (donut)
-  if(hsChart) hsChart.destroy();
-  hsChart = new Chart(document.getElementById('chart-hs'),{
-    type:'doughnut',
-    data:{labels:['Z1 <120','Z2 120-140','Z3 140-150','Z4 150+'],datasets:[{data:[15,40,30,15],backgroundColor:['#9FE1CB','#1D9E75','#EF9F27','#D85A30'],borderWidth:0}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:10}}}}
-  });
-
-  // Insight
-  const laaste = alleRitten[alleRitten.length-1];
-  const eerste = alleRitten[0];
-  const verbetering = (((+laaste.afstand_km-(+eerste.afstand_km))/(+eerste.afstand_km))*100).toFixed(1);
-  document.getElementById('dash-insight').innerHTML = `
-    <div class="insight-icon">💡</div>
-    <div>
-      <div class="insight-title">Progressie: +${verbetering}% snelheid t.o.v. rit 1</div>
-      <div class="insight-text">Je beste prestatie is ${beste.toFixed(2)} km in 30 min. ${prs.length} keer een persoonlijk record. Gemiddelde snelheid ligt nu op ${gem.toFixed(2)} km/u.</div>
-    </div>`;
-}
-
-// ── OVERZICHT ────────────────────────────────────────────────────
-function renderTabel(ritten){
-  const tbody = document.getElementById('tabel-body');
-  if(!ritten.length){
-    tbody.innerHTML='<tr><td colspan="10"><div class="empty"><div class="empty-icon">🚴</div>Geen ritten gevonden</div></td></tr>';
-    document.getElementById('tbl-count').textContent='0 ritten';
-    return;
-  }
-  tbody.innerHTML = ritten.map(r=>{
-    const kmh = ((+r.afstand_km||0)/((+r.tijd_min||30)/60)).toFixed(2);
-    const herstelStr = r.herstel_sec ? formatHerstel(r.herstel_sec) : '—';
-    const datum = r.datum ? new Date(r.datum).toLocaleDateString('nl-NL',{day:'2-digit',month:'2-digit'}) : '—';
-    return `<tr class="${r.is_pr?'pr-row':''}">
-      <td><b>${r.rit_nummer||'—'}</b>${r.is_pr?' 🏆':''}</td>
-      <td>${datum}</td>
-      <td><b>${(+r.afstand_km||0).toFixed(2)}</b> km</td>
-      <td>${kmh}</td>
-      <td>${r.weerstand||'—'}</td>
-      <td><span class="badge ${r.type_rit||'steady'}">${r.type_rit||'—'}</span></td>
-      <td>${herstelStr}</td>
-      <td>${r.rpe||'—'}</td>
-      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;color:var(--muted);">${r.notities||''}</td>
-      <td><div class="tbl-actions">
-        <button class="tbl-btn" onclick="bewerkRit(${r.id})" title="Bewerken">✏️</button>
-        <button class="tbl-btn del" onclick="verwijderRit(${r.id})" title="Verwijderen">🗑️</button>
-      </div></td>
-    </tr>`;
-  }).join('');
-  document.getElementById('tbl-count').textContent = ritten.length+' ritten';
-}
-
-function filterTabel(){
-  const q = document.getElementById('tbl-search').value.toLowerCase();
-  let r = alleRitten;
-  if(activeFilter==='pr') r=r.filter(x=>x.is_pr);
-  else if(activeFilter!=='all') r=r.filter(x=>x.type_rit===activeFilter);
-  if(q) r=r.filter(x=>(x.notities||'').toLowerCase().includes(q)||(x.type_rit||'').includes(q)||String(x.weerstand).includes(q));
-  renderTabel(r);
-}
-
-function setFilter(el,f){
-  activeFilter=f;
-  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
-  el.classList.add('active');
-  filterTabel();
-}
-
-// ── ANALYSE ──────────────────────────────────────────────────────
-function renderAnalyse(){
-  if(!alleRitten.length) return;
-
-  // Periodisering per week
-  const weeks = {};
-  alleRitten.forEach(r=>{
-    const d = new Date(r.datum||'2025-01-01');
-    const wk = Math.ceil((d-new Date(d.getFullYear(),0,1))/(7*86400000));
-    const key = d.getFullYear()+'W'+wk;
-    if(!weeks[key]) weeks[key]={steady:0,interval:0,label:'W'+Object.keys(weeks).length+1};
-    if(r.type_rit==='interval') weeks[key].interval++;
-    else weeks[key].steady++;
-  });
-  const wkArr = Object.values(weeks).slice(-8);
-  document.getElementById('period-grid').innerHTML = wkArr.map((w,i)=>`
-    <div class="period-week">
-      <div class="period-label">${w.label||'W'+(i+1)}</div>
-      <div class="period-bars">
-        ${w.steady?`<div class="period-bar steady" style="height:${Math.min(w.steady*14,32)}px;" title="${w.steady}x steady"></div>`:''}
-        ${w.interval?`<div class="period-bar interval" style="height:${Math.min(w.interval*14,32)}px;" title="${w.interval}x interval"></div>`:''}
-      </div>
-      <div style="font-size:10px;color:var(--muted);margin-top:3px;">${w.steady+w.interval} rit(ten)</div>
-    </div>`).join('');
-
-  // Goals
-  const beste = Math.max(...alleRitten.map(r=>+r.afstand_km||0));
-  const doel = 16.5;
-  const pct = Math.min((beste/doel)*100,100).toFixed(0);
-  document.getElementById('goal-afstand').style.width=pct+'%';
-  document.getElementById('goal-afstand-val').textContent=`${beste.toFixed(2)} / ${doel} km (${pct}%)`;
-
-  const herstelRitten = alleRitten.filter(r=>r.herstel_sec).slice(-6);
-  if(herstelRitten.length>=2){
-    const verbHerstel = ((herstelRitten[0].herstel_sec-herstelRitten[herstelRitten.length-1].herstel_sec)/herstelRitten[0].herstel_sec*100);
-    const pctH = Math.min(Math.max(50+verbHerstel,0),100).toFixed(0);
-    document.getElementById('goal-herstel').style.width=pctH+'%';
-    document.getElementById('goal-herstel-val').textContent=verbHerstel>0?`Sneller: ${verbHerstel.toFixed(0)}% verbetering`:'Stabiel herstel';
-  }
-
-  // RPE chart
-  const rpeRitten = alleRitten.filter(r=>r.rpe);
-  if(rpeChart) rpeChart.destroy();
-  if(rpeRitten.length){
-    rpeChart = new Chart(document.getElementById('chart-rpe'),{
-      type:'scatter',
-      data:{datasets:[{data:rpeRitten.map(r=>({x:+r.rpe,y:((+r.afstand_km)/((+r.tijd_min||30)/60)).toFixed(2),label:'R'+r.rit_nummer})),backgroundColor:'#7F77DD',pointRadius:6}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw.label}: RPE ${ctx.raw.x} → ${ctx.raw.y} km/u`}}},scales:{x:{title:{display:true,text:'RPE',font:{size:11}},min:1,max:10},y:{title:{display:true,text:'km/u',font:{size:11}}}}}
-    });
-  } else {
-    document.getElementById('chart-rpe').parentElement.innerHTML='<div class="empty"><div class="empty-icon">📊</div><div>RPE-data beschikbaar zodra je het bij ritten invult</div></div>';
-  }
-
-  // Adviezen
-  const advices = genereerAdviezen();
-  document.getElementById('advice-list').innerHTML = advices.map(a=>`
-    <div class="advice ${a.kleur}">
-      <div class="advice-title">${a.titel}</div>
-      <div class="advice-text">${a.tekst}</div>
-    </div>`).join('');
-}
-
-function genereerAdviezen(){
-  const adv = [];
-  const steady = alleRitten.filter(r=>r.type_rit==='steady-state'||r.type_rit==='duurtest');
-  const interval = alleRitten.filter(r=>r.type_rit==='interval');
-  const laatste5 = alleRitten.slice(-5);
-  const intervalLaatste = laatste5.filter(r=>r.type_rit==='interval').length;
-  const beste = Math.max(...steady.map(r=>+r.afstand_km||0));
-  const laaste3Steady = steady.slice(-3);
-  const consec = laaste3Steady.length===3 && laaste3Steady.every(r=>r.type_rit==='steady-state');
-
-  if(consec) adv.push({kleur:'green',titel:'Aanbeveling: varieer met een intervalrit',tekst:'Je hebt 3 steady-state ritten achter elkaar. Een intervalrit deze week stimuleert je VO2max en voorkomt adaptatiestagnatie.'});
-  if(intervalLaatste>=3) adv.push({kleur:'amber',titel:'Let op: relatief veel intervalritten',tekst:'In je laatste 5 ritten zaten '+intervalLaatste+' intervaltrainingen. Zorg voor voldoende herstel — 48u tussen zware sessies is ideaal.'});
-  const warmRitten = alleRitten.filter(r=>(r.omstandigheden||'').includes('warm'));
-  if(warmRitten.length>=2){
-    const gemWarm = warmRitten.reduce((a,r)=>a+(+r.herstel_sec||0),0)/warmRitten.filter(r=>r.herstel_sec).length;
-    adv.push({kleur:'coral',titel:'Patroon: warmte verhoogt hersteltijd',tekst:`Je hersteltijd bij warmte is gemiddeld ${Math.round(gemWarm)} sec. Normaal fysiologisch effect — overweeg extra hydratatie bij warm weer.`});
-  }
-  if(beste>=15.9) adv.push({kleur:'purple',titel:'Volgende stap: test stand 12 steady-state',tekst:'Je haalt consistent 15,9+ km op stand 11. Een 10-minuten blok op stand 12 tijdens een steady rit geeft data over je nieuwe plafond.'});
-  adv.push({kleur:'green',titel:'Ademhalingstechniek: blijf toepassen',tekst:'Rit 14 toonde aan dat gecontroleerde ademhaling (kort sterk bij ~140 bpm) je hartslag aantoonbaar lager houdt. Dit is diafragmatisch ademhalen — consistentie geeft steeds meer effect.'});
-  if(alleRitten.filter(r=>r.rpe).length<3) adv.push({kleur:'purple',titel:'Start met RPE bijhouden',tekst:'Vul bij elke rit de RPE (1–10) in. Na 5 ritten kan de app je inspanning koppelen aan output — zo zie je of je efficiënter wordt.'});
-  return adv;
-}
-
-// ── FORM ─────────────────────────────────────────────────────────
-function initForm(){
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('f-datum').value = today;
-  document.getElementById('invoer-datum-label').textContent = 'Rit '+(alleRitten.length+1)+' — '+new Date().toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  // tags
+  activeTags=new Set();
   document.querySelectorAll('.tag').forEach(t=>{
     t.addEventListener('click',()=>{
-      const tag=t.dataset.tag, cls=t.dataset.cls;
-      if(activeTags.has(tag)){activeTags.delete(tag);t.classList.remove('active',cls);}
-      else{activeTags.add(tag);t.classList.add('active',cls);}
+      const tag=t.dataset.tag,cls=t.dataset.cls;
+      if(activeTags.has(tag)){activeTags.delete(tag);t.className='tag';}
+      else{activeTags.add(tag);t.className='tag active-'+cls;}
     });
   });
+
+  // prefill bij bewerken
+  if(editId){
+    const r=ritten.find(x=>x.id===editId);
+    if(r){
+      document.getElementById('f-datum').value=r.datum||today;
+      document.getElementById('f-afstand').value=r.afstand_km||'';
+      document.getElementById('f-weerstand').value=r.weerstand||'';
+      document.getElementById('f-type').value=r.type_rit||'steady-state';
+      document.getElementById('f-hs1').value=r.hs_0_10||'';
+      document.getElementById('f-hs2').value=r.hs_10_20||'';
+      document.getElementById('f-hs3').value=r.hs_20_30||'';
+      document.getElementById('f-herstel').value=r.herstel_sec?fmtHerstel(r.herstel_sec):'';
+      document.getElementById('f-rpe').value=r.rpe||'';
+      document.getElementById('f-notities').value=r.notities||'';
+      document.getElementById('f-pr').checked=r.is_pr||false;
+      activeTags=new Set((r.omstandigheden||'').split(',').filter(Boolean));
+      activeTags.forEach(tag=>{
+        const el=document.querySelector('[data-tag="'+tag+'"]');
+        if(el){el.className='tag active-'+el.dataset.cls;}
+      });
+    }
+  }
 }
 
-function herstelStrNaarSec(s){
-  if(!s) return null;
-  const m = s.match(/(\d+)\s*min\s*(\d+)/); if(m) return +m[1]*60+ +m[2];
-  const m2 = s.match(/(\d+)\s*sec/); if(m2) return +m2[1];
-  const m3 = s.match(/^(\d+)$/); if(m3) return +m3[1];
-  return null;
-}
+function resetForm(){editId=null;renderInvoer();}
 
-async function slaRitOp(){
-  const afstand = parseFloat(document.getElementById('f-afstand').value.replace(',','.'));
+async function slaOp(){
+  const afstand=parseFloat((document.getElementById('f-afstand').value||'').replace(',','.'));
   if(!afstand){toon('Vul minimaal een afstand in');return;}
-  const payload = {
-    datum: document.getElementById('f-datum').value,
-    rit_nummer: editId ? undefined : (alleRitten.length+1),
-    afstand_km: afstand,
-    tijd_min: 30,
-    weerstand: parseInt(document.getElementById('f-weerstand').value)||null,
-    type_rit: document.getElementById('f-type').value,
-    hs_0_10: document.getElementById('f-hs1').value||null,
-    hs_10_20: document.getElementById('f-hs2').value||null,
-    hs_20_30: document.getElementById('f-hs3').value||null,
-    herstel_sec: herstelStrNaarSec(document.getElementById('f-herstel').value),
-    rpe: parseInt(document.getElementById('f-rpe').value)||null,
-    omstandigheden: [...activeTags].join(','),
-    notities: document.getElementById('f-notities').value||null,
-    is_pr: document.getElementById('f-pr').checked,
+  const payload={
+    datum:document.getElementById('f-datum').value,
+    rit_nummer:editId?undefined:(ritten.length+1),
+    afstand_km:afstand,
+    tijd_min:30,
+    weerstand:parseInt(document.getElementById('f-weerstand').value)||null,
+    type_rit:document.getElementById('f-type').value,
+    hs_0_10:document.getElementById('f-hs1').value||null,
+    hs_10_20:document.getElementById('f-hs2').value||null,
+    hs_20_30:document.getElementById('f-hs3').value||null,
+    herstel_sec:parsHerstel(document.getElementById('f-herstel').value),
+    rpe:parseInt(document.getElementById('f-rpe').value)||null,
+    omstandigheden:[...activeTags].join(',')||null,
+    notities:document.getElementById('f-notities').value||null,
+    is_pr:document.getElementById('f-pr').checked,
   };
   try{
-    if(editId){
-      await apiFetch('fiets_ritten?id=eq.'+editId,{method:'PATCH',body:JSON.stringify(payload)});
-      toon('Rit bijgewerkt');
-      editId=null;
-    } else {
-      await apiFetch('fiets_ritten',{method:'POST',body:JSON.stringify(payload)});
-      toon('Rit opgeslagen! 🎉');
-    }
+    if(editId){await api('fiets_ritten?id=eq.'+editId,{method:'PATCH',body:JSON.stringify(payload)});toon('Rit bijgewerkt ✓');editId=null;}
+    else{await api('fiets_ritten',{method:'POST',body:JSON.stringify(payload)});toon('Rit opgeslagen! 🎉');}
+    document.getElementById('inv-ok').style.display='block';
+    setTimeout(()=>{if(document.getElementById('inv-ok'))document.getElementById('inv-ok').style.display='none';},3000);
+    await laadRitten();
+    document.getElementById('topbar-sub').textContent=ritten.length+' ritten';
     resetForm();
-    document.getElementById('invoer-success').style.display='block';
-    setTimeout(()=>document.getElementById('invoer-success').style.display='none',3000);
-    await laadRitten();
-    renderDashboard(); renderAnalyse(); filterTabel();
-  } catch(e){toon('Opslaan mislukt — check verbinding');}
+  }catch(e){toon('Opslaan mislukt — check verbinding');}
 }
 
-function resetForm(){
-  ['f-afstand','f-weerstand','f-hs1','f-hs2','f-hs3','f-herstel','f-notities'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('f-type').value='steady-state';
-  document.getElementById('f-rpe').value='';
-  document.getElementById('f-pr').checked=false;
-  activeTags.clear();
-  document.querySelectorAll('.tag').forEach(t=>t.className='tag');
-  editId=null;
+// ── OVERZICHT ─────────────────────────────────────────────
+function renderOverzicht(){
+  const el=document.getElementById('page-overzicht');
+  el.innerHTML=`
+    <div class="search-wrap">
+      <input class="search-box" type="search" id="tbl-search" placeholder="🔍  Zoeken op type, stand, notitie..." oninput="filterOvz()">
+    </div>
+    <div class="filter-row">
+      <div class="filter-pill active" data-f="all" onclick="setF(this,'all')">Alle</div>
+      <div class="filter-pill" data-f="steady-state" onclick="setF(this,'steady-state')">Steady-state</div>
+      <div class="filter-pill" data-f="interval" onclick="setF(this,'interval')">Interval</div>
+      <div class="filter-pill" data-f="duurtest" onclick="setF(this,'duurtest')">Duurtest</div>
+      <div class="filter-pill" data-f="pr" onclick="setF(this,'pr')">Alleen PR's</div>
+    </div>
+    <div id="rit-list"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;margin-bottom:16px;">
+      <span style="font-size:13px;color:var(--muted);" id="ovz-count"></span>
+      <button onclick="exportCSV()" style="border:1px solid var(--border);border-radius:100px;padding:7px 14px;font-size:13px;background:var(--white);color:var(--muted);font-family:var(--font);cursor:pointer;">↓ CSV</button>
+    </div>`;
+  filterOvz();
 }
 
-function bewerkRit(id){
-  const r = alleRitten.find(x=>x.id===id); if(!r) return;
-  editId=id;
-  document.getElementById('f-datum').value=r.datum||'';
-  document.getElementById('f-afstand').value=r.afstand_km||'';
-  document.getElementById('f-weerstand').value=r.weerstand||'';
-  document.getElementById('f-type').value=r.type_rit||'steady-state';
-  document.getElementById('f-hs1').value=r.hs_0_10||'';
-  document.getElementById('f-hs2').value=r.hs_10_20||'';
-  document.getElementById('f-hs3').value=r.hs_20_30||'';
-  document.getElementById('f-herstel').value=r.herstel_sec?formatHerstel(r.herstel_sec):'';
-  document.getElementById('f-rpe').value=r.rpe||'';
-  document.getElementById('f-notities').value=r.notities||'';
-  document.getElementById('f-pr').checked=r.is_pr||false;
-  activeTags=new Set((r.omstandigheden||'').split(',').filter(Boolean));
-  activeTags.forEach(tag=>{
-    const el=document.querySelector(`[data-tag="${tag}"]`);
-    if(el) el.classList.add('active',el.dataset.cls);
-  });
-  navigate('invoer');
-  toon('Rit '+r.rit_nummer+' klaar om te bewerken');
+function setF(el,f){
+  activeFilter=f;
+  document.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  filterOvz();
 }
 
+function filterOvz(){
+  const q=(document.getElementById('tbl-search')?.value||'').toLowerCase();
+  let r=ritten;
+  if(activeFilter==='pr')r=r.filter(x=>x.is_pr);
+  else if(activeFilter!=='all')r=r.filter(x=>x.type_rit===activeFilter);
+  if(q)r=r.filter(x=>(x.notities||'').toLowerCase().includes(q)||(x.type_rit||'').includes(q)||String(x.weerstand||'').includes(q));
+  const list=document.getElementById('rit-list');
+  if(!list)return;
+  if(!r.length){list.innerHTML='<div class="empty"><div class="empty-icon">🚴</div>Geen ritten gevonden</div>';document.getElementById('ovz-count').textContent='';return;}
+  list.innerHTML=r.slice().reverse().map(rit=>`
+    <div class="rit-card ${rit.is_pr?'is-pr':''}">
+      <div class="rit-card-top">
+        <span class="rit-nr">Rit ${rit.rit_nummer||'—'}${rit.is_pr?' 🏆':''}</span>
+        <span class="rit-datum">${fmtDatum(rit.datum)}</span>
+      </div>
+      <div class="rit-afstand">${(+rit.afstand_km||0).toFixed(2)} km</div>
+      <div class="rit-kmh">${kmh(rit)} km/u · Stand ${rit.weerstand||'—'} · Herstel ${fmtHerstel(rit.herstel_sec)}</div>
+      <div class="rit-meta">
+        <span class="badge ${rit.type_rit||'steady'}">${rit.type_rit||'—'}</span>
+        ${rit.rpe?`<span class="badge stand">RPE ${rit.rpe}</span>`:''}
+        ${(rit.omstandigheden||'').split(',').filter(Boolean).map(o=>`<span class="badge herstel">${o.replace(/_/g,' ')}</span>`).join('')}
+      </div>
+      ${rit.notities?`<div class="rit-notitie">${rit.notities}</div>`:''}
+      ${rit.hs_0_10||rit.hs_10_20||rit.hs_20_30?`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:8px;">
+        ${rit.hs_0_10?`<div style="background:var(--p50);border-radius:8px;padding:6px 8px;font-size:11px;"><div style="color:var(--p600);font-weight:600;margin-bottom:1px;">0–10</div>${rit.hs_0_10}</div>`:''}
+        ${rit.hs_10_20?`<div style="background:var(--p50);border-radius:8px;padding:6px 8px;font-size:11px;"><div style="color:var(--p600);font-weight:600;margin-bottom:1px;">10–20</div>${rit.hs_10_20}</div>`:''}
+        ${rit.hs_20_30?`<div style="background:var(--a50);border-radius:8px;padding:6px 8px;font-size:11px;"><div style="color:var(--a600);font-weight:600;margin-bottom:1px;">20–30</div>${rit.hs_20_30}</div>`:''}
+      </div>`:''}
+      <div class="rit-actions">
+        <button class="rit-btn edit" onclick="bewerkRit(${rit.id})">✏️ Bewerken</button>
+        <button class="rit-btn del" onclick="verwijderRit(${rit.id})">🗑️ Verwijderen</button>
+      </div>
+    </div>`).join('');
+  document.getElementById('ovz-count').textContent=r.length+' ritten';
+}
+
+async function bewerkRit(id){editId=id;navigate('invoer');}
 async function verwijderRit(id){
-  if(!confirm('Weet je zeker dat je deze rit wilt verwijderen?')) return;
-  try{
-    await apiFetch('fiets_ritten?id=eq.'+id,{method:'DELETE'});
-    await laadRitten();
-    filterTabel(); renderDashboard(); renderAnalyse();
-    toon('Rit verwijderd');
-  } catch(e){toon('Verwijderen mislukt');}
-}
-
-// ── UTILS ────────────────────────────────────────────────────────
-function formatHerstel(sec){
-  if(!sec) return '—';
-  const m=Math.floor(sec/60), s=sec%60;
-  return m>0?m+' min '+s+' sec':s+' sec';
+  if(!confirm('Rit verwijderen?'))return;
+  try{await api('fiets_ritten?id=eq.'+id,{method:'DELETE'});await laadRitten();filterOvz();toon('Rit verwijderd');}
+  catch(e){toon('Verwijderen mislukt');}
 }
 
 function exportCSV(){
-  const header=['Rit','Datum','Afstand km','Km/u','Stand','Type','Herstel sec','RPE','HS 0-10','HS 10-20','HS 20-30','Omstandigheden','Notities','PR'];
-  const rows=alleRitten.map(r=>[r.rit_nummer,r.datum,(+r.afstand_km).toFixed(2),(((+r.afstand_km)/((+r.tijd_min||30)/60)).toFixed(2)),r.weerstand,r.type_rit,r.herstel_sec||'',r.rpe||'',r.hs_0_10||'',r.hs_10_20||'',r.hs_20_30||'',r.omstandigheden||'',r.notities||'',r.is_pr?'ja':'']);
-  const csv=[header,...rows].map(r=>r.join(';')).join('\n');
-  const a=document.createElement('a');
-  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
-  a.download='fiets_ritten.csv'; a.click();
+  const h=['Rit','Datum','Afstand','Km/u','Stand','Type','Herstel sec','RPE','HS 0-10','HS 10-20','HS 20-30','Omstandigheden','Notities','PR'];
+  const rows=ritten.map(r=>[r.rit_nummer,r.datum,(+r.afstand_km).toFixed(2),kmh(r),r.weerstand||'',r.type_rit||'',r.herstel_sec||'',r.rpe||'',r.hs_0_10||'',r.hs_10_20||'',r.hs_20_30||'',r.omstandigheden||'',r.notities||'',r.is_pr?'ja':'']);
+  const csv=[h,...rows].map(r=>r.join(';')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);a.download='fiets_ritten.csv';a.click();
 }
 
-function toon(msg){
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2800);
+// ── ANALYSE ───────────────────────────────────────────────
+function renderAnalyse(){
+  const el=document.getElementById('page-analyse');
+  const beste=Math.max(...ritten.map(r=>+r.afstand_km||0));
+  const doel=16.5;
+  const pctA=Math.min((beste/doel)*100,100).toFixed(0);
+  const hrR=ritten.filter(r=>r.herstel_sec).slice(-6);
+  const verbH=hrR.length>=2?((hrR[0].herstel_sec-hrR[hrR.length-1].herstel_sec)/hrR[0].herstel_sec*100):0;
+  const pctH=Math.min(Math.max(50+verbH,0),100).toFixed(0);
+  const adviezen=genereerAdviezen();
+
+  el.innerHTML=`
+    <div class="card">
+      <div class="card-title">Doelen & voortgang</div>
+      <div class="goal-card">
+        <div class="goal-label">Doelafstand (doel: ${doel} km)</div>
+        <div class="goal-bar"><div class="goal-fill purple" style="width:${pctA}%"></div></div>
+        <div class="goal-value">${beste.toFixed(2)} / ${doel} km (${pctA}%)</div>
+      </div>
+      <div class="goal-card">
+        <div class="goal-label">Herstelverbetering (laatste 6 ritten)</div>
+        <div class="goal-bar"><div class="goal-fill teal" style="width:${pctH}%"></div></div>
+        <div class="goal-value">${verbH>0?'Sneller: +'+verbH.toFixed(0)+'% verbetering':'Stabiel herstelpatroon'}</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">RPE vs snelheid</div>
+      <div class="chart-wrap" id="rpe-wrap"><canvas id="c-rpe"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Sportinstructeur adviezen
+      </div>
+      ${adviezen.map(a=>`<div class="advice ${a.k}"><div class="adv-title">${a.t}</div><div class="adv-text">${a.b}</div></div>`).join('')}
+    </div>`;
+
+  // RPE chart
+  const rpeRitten=ritten.filter(r=>r.rpe);
+  if(rpeRitten.length){
+    if(chartRpe)chartRpe.destroy();
+    chartRpe=new Chart(document.getElementById('c-rpe'),{
+      type:'scatter',
+      data:{datasets:[{data:rpeRitten.map(r=>({x:+r.rpe,y:+kmh(r),label:'R'+r.rit_nummer})),backgroundColor:'#7F77DD',pointRadius:7,pointHoverRadius:9}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw.label}: RPE ${c.raw.x} → ${c.raw.y} km/u`}}},scales:{x:{title:{display:true,text:'RPE',font:{size:11}},min:1,max:10,ticks:{font:{size:10}}},y:{title:{display:true,text:'km/u',font:{size:11}},ticks:{font:{size:10}}}}}
+    });
+  } else {
+    document.getElementById('rpe-wrap').innerHTML='<div class="empty" style="padding:20px;"><div class="empty-icon" style="font-size:24px;">📊</div><div style="font-size:13px;">RPE-data zichtbaar zodra je het invult bij ritten</div></div>';
+  }
 }
 
-function navigate(page){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('page-'+page).classList.add('active');
-  document.querySelector(`[data-page="${page}"]`).classList.add('active');
+function genereerAdviezen(){
+  const adv=[];
+  const steady=ritten.filter(r=>r.type_rit==='steady-state'||r.type_rit==='duurtest');
+  const laatste5=ritten.slice(-5);
+  const consec=laatste5.slice(-3).every(r=>r.type_rit==='steady-state'||r.type_rit==='duurtest');
+  const intLaatste=laatste5.filter(r=>r.type_rit==='interval').length;
+  const beste=Math.max(...steady.map(r=>+r.afstand_km||0));
+  const warmRitten=ritten.filter(r=>(r.omstandigheden||'').includes('warm'));
+
+  if(consec)adv.push({k:'green',t:'Varieer: intervalrit aanbevolen',b:'3 steady-state ritten achter elkaar. Een intervalrit stimuleert je VO₂max en voorkomt adaptatiestagnatie.'});
+  if(intLaatste>=3)adv.push({k:'coral',t:'Let op: herstel na interval',b:'In je laatste 5 ritten '+intLaatste+' intervaltrainingen. Gun jezelf 48u herstel tussen zware sessies.'});
+  if(warmRitten.length>=2){const gem=warmRitten.filter(r=>r.herstel_sec).reduce((a,r)=>a+r.herstel_sec,0)/warmRitten.filter(r=>r.herstel_sec).length;adv.push({k:'amber',t:'Patroon: warmte verhoogt hersteltijd',b:`Gemiddeld ${Math.round(gem)} sec bij warmte. Normaal fysiologisch effect — extra hydratatie helpt.`});}
+  if(beste>=15.9)adv.push({k:'purple',t:'Volgende stap: stand 12 steady-state',b:'Je haalt consistent 15,9+ km op stand 11. Test een 10-min blok op stand 12 voor data over je nieuw plafond.'});
+  adv.push({k:'green',t:'Ademhalingstechniek: vasthouden',b:'Kort sterk ademhalen bij ~140 bpm houdt je hartslag aantoonbaar lager. Dit is diafragmatisch ademhalen — blijf dit toepassen.'});
+  if(ritten.filter(r=>r.rpe).length<3)adv.push({k:'purple',t:'Start met RPE bijhouden',b:'Vul bij elke rit RPE (1–10) in. Na 5 ritten koppelt de app je inspanning aan output en zie je of je efficiënter wordt.'});
+  return adv;
 }
 
-document.querySelectorAll('.nav-tab').forEach(t=>{
-  t.addEventListener('click',()=>navigate(t.dataset.page));
-});
-
-// ── INIT ─────────────────────────────────────────────────────────
+// INIT
 (async()=>{
-  await laadRitten();
-  initForm();
   renderDashboard();
-  filterTabel();
-  renderAnalyse();
+  document.getElementById('page-dashboard').innerHTML='<div class="loading"><div class="spinner"></div>Ritten laden...</div>';
+  await laadRitten();
+  renderDashboard();
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('/sport/sw.js',{scope:'/sport/'}).catch(()=>{});
+  }
 })();
-</script>
-<script>
-if("serviceWorker" in navigator){
-  window.addEventListener("load",()=>{
-    navigator.serviceWorker.register("/sw.js").catch(()=>{});
-  });
-}
 </script>
 </body>
 </html>
