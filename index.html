@@ -506,11 +506,11 @@ function renderDashboard(){
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         Snelheidsontwikkeling
       </div>
-      <div class="chart-wrap"><canvas id="c-speed"></canvas></div>
+      <div class="chart-wrap" style="height:198px;"><canvas id="c-speed"></canvas></div>
       <div style="display:flex;gap:12px;margin-top:8px;">
         <span style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;"><span style="width:10px;height:3px;background:var(--t400);border-radius:2px;display:inline-block;"></span>Steady</span>
         <span style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;"><span style="width:10px;height:3px;background:var(--c400);border-radius:2px;display:inline-block;"></span>Interval</span>
-        <span style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:var(--a400);border-radius:50%;display:inline-block;"></span>PR</span>
+        <span style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;">🏆 PR</span>
       </div>
     </div>
     <div class="card">
@@ -533,14 +533,40 @@ function renderDashboard(){
   } else {
   const labels=ritten.map(r=>'R'+r._weergaveNr);
   const speeds=ritten.map(r=>+kmh(r));
+  const isPrArr=ritten.map(r=>!!r.is_pr);
   const ptBg=ritten.map(r=>r.type_rit==='interval'?'#D85A30':'#1D9E75');
   const ptR=ritten.map(r=>r.is_pr?7:4);
   const ptBorder=ritten.map(r=>r.is_pr?'#BA7517':'transparent');
+
+  // Plugin: tekent een trofee-icoon exact onder de x-as labels, op dezelfde pixel-positie
+  // als het bijbehorende datapunt. Hierdoor sluit de trofee altijd 1-op-1 aan op de juiste rit,
+  // ook al verschuift Chart.js zijn interne marges bij een ander aantal ritten.
+  const prTrofeePlugin={
+    id:'prTrofee',
+    afterDraw(chart){
+      const {ctx}=chart;
+      const xAxis=chart.scales.x;
+      const meta=chart.getDatasetMeta(0);
+      meta.data.forEach((point,i)=>{
+        if(isPrArr[i]){
+          ctx.save();
+          ctx.font='13px sans-serif';
+          ctx.textAlign='center';
+          ctx.textBaseline='top';
+          // Net onder de as-labels tekenen (xAxis.bottom + ruimte voor het label zelf)
+          ctx.fillText('🏆', point.x, xAxis.bottom+8);
+          ctx.restore();
+        }
+      });
+    }
+  };
+
   if(chartSpeed)chartSpeed.destroy();
   chartSpeed=new Chart(document.getElementById('c-speed'),{
     type:'line',
     data:{labels,datasets:[{data:speeds,borderColor:'#7F77DD',borderWidth:2,pointBackgroundColor:ptBg,pointRadius:ptR,pointBorderColor:ptBorder,pointBorderWidth:2,tension:.35,fill:false}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9}},grid:{display:false}},y:{ticks:{font:{size:9}},grid:{color:'#F0EFF9'}}}}
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{bottom:24}},plugins:{legend:{display:false},tooltip:{callbacks:{afterLabel:ctx=>isPrArr[ctx.dataIndex]?'🏆 PR ('+(ritten[ctx.dataIndex].type_rit||'')+')':''}}},scales:{x:{ticks:{font:{size:9}},grid:{display:false}},y:{ticks:{font:{size:9}},grid:{color:'#F0EFF9'}}}},
+    plugins:[prTrofeePlugin]
   });
 
   // Herstel chart
@@ -678,6 +704,54 @@ function isNieuwePR(afstand, type, excludeId){
   if(!zelfdeType.length) return afstand>0; // eerste rit van dit type is altijd een PR
   const beste = Math.max(...zelfdeType.map(r=>+r.afstand_km||0));
   return afstand > beste;
+}
+
+// Herberekent voor ALLE ritten of ze daadwerkelijk een PR waren, op basis van de chronologische
+// volgorde (oudste naar nieuwste) en gescheiden per type rit. Dit corrigeert situaties waarin
+// ritten achteraf, niet-chronologisch, of met een verkeerde is_pr-waarde zijn ingevoerd.
+async function herberekenAllePRs(){
+  if(!confirm('Alle PR-vlaggen herberekenen op basis van datum-volgorde? Dit overschrijft de huidige is_pr waarden in de database.')) return;
+  toon('PR\'s herberekenen...');
+
+  // Chronologisch sorteren (oud → nieuw), net als herNummerRitten() al doet voor weergave
+  const chronologisch = ritten.slice().sort((a,b)=>{
+    const da=new Date(a.datum||0), db=new Date(b.datum||0);
+    if(da-db!==0) return da-db;
+    return (a.id||0)-(b.id||0);
+  });
+
+  const besteTotNuToe = {}; // per type rit het record tot dat moment
+  const wijzigingen = [];
+
+  chronologisch.forEach(r=>{
+    const type = r.type_rit || 'steady-state';
+    const afstand = +r.afstand_km || 0;
+    const huidigBeste = besteTotNuToe[type] || 0;
+    const nieuweIsPr = afstand > huidigBeste;
+    if(nieuweIsPr){ besteTotNuToe[type] = afstand; }
+    if(!!r.is_pr !== nieuweIsPr){
+      wijzigingen.push({id:r.id, is_pr:nieuweIsPr});
+    }
+  });
+
+  if(!wijzigingen.length){
+    toon('Alles klopte al — geen wijzigingen nodig ✓');
+    return;
+  }
+
+  try{
+    // Eén voor één bijwerken (PostgREST ondersteunt geen bulk-update met verschillende waarden per rij)
+    for(const w of wijzigingen){
+      await api('fiets_ritten?id=eq.'+w.id,{method:'PATCH',body:JSON.stringify({is_pr:w.is_pr})});
+    }
+    await laadRitten();
+    renderDashboard();
+    toon(`${wijzigingen.length} rit(ten) bijgewerkt — PR's kloppen nu ✓`);
+    if(document.getElementById('page-analyse').classList.contains('active')) renderAnalyse();
+    if(document.getElementById('page-overzicht').classList.contains('active')) filterOvz();
+  }catch(e){
+    toon('Herberekenen mislukt — check verbinding');
+  }
 }
 
 function updatePrPreview(){
@@ -849,6 +923,16 @@ function renderAnalyse(){
         Sportinstructeur adviezen
       </div>
       ${adviezen.map(a=>`<div class="advice ${a.k}"><div class="adv-title">${a.t}</div><div class="adv-text">${a.b}</div></div>`).join('')}
+    </div>
+    <div class="card">
+      <div class="card-title">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        Beheer
+      </div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px;">
+        Klopt het aantal PR's niet meer met je verwachting (bijv. na het invoeren van oudere ritten)? Herberekenen loopt door alle ritten in datumvolgorde en bepaalt per type rit (steady-state, interval, duurtest, herstel) opnieuw welke ritten op dat moment een record waren.
+      </div>
+      <button class="btn btn-secondary" style="margin-bottom:0;" onclick="herberekenAllePRs()">🔄 PR's herberekenen</button>
     </div>`;
 
   // RPE chart
