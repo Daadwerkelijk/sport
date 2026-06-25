@@ -599,10 +599,17 @@ function renderInvoer(){
       <label>Afstand</label>
       <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center;">
         <input type="number" id="f-afstand-km" placeholder="15" min="0">
-        <span style="text-align:center;color:var(--muted);font-size:13px;">km +</span>
-        <input type="number" id="f-afstand-m" placeholder="470" min="0" max="999">
+        <span style="text-align:center;color:var(--muted);font-size:13px;">,</span>
+        <input type="number" id="f-afstand-deci" placeholder="20" min="0" max="99">
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-top:4px;">tweede veld in meters, bijv. 470 m = 15,47 km</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">tweede veld = honderdsten van een km, bijv. 15 + 20 = 15,20 km</div>
+    </div>
+    <div class="form-group">
+      <label>Duur van de sessie</label>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center;">
+        <input type="number" id="f-tijd-min" placeholder="30" min="1" value="30">
+        <span style="color:var(--muted);font-size:13px;">minuten</span>
+      </div>
     </div>
     <div class="form-group"><label>Type rit</label>
       <select id="f-type" onchange="updatePrPreview()">
@@ -655,7 +662,7 @@ function renderInvoer(){
   renderOmstandighedenTags();
 
   // live PR-check bij elke wijziging in afstand
-  ['f-afstand-km','f-afstand-m'].forEach(id=>{
+  ['f-afstand-km','f-afstand-deci'].forEach(id=>{
     document.getElementById(id).addEventListener('input', updatePrPreview);
   });
 
@@ -668,9 +675,10 @@ function renderInvoer(){
     if(r){
       document.getElementById('f-datum').value=r.datum||today;
       const km=Math.floor(+r.afstand_km||0);
-      const m=Math.round(((+r.afstand_km||0)-km)*1000);
+      const decimaal=Math.round(((+r.afstand_km||0)-km)*100);
       document.getElementById('f-afstand-km').value=km||'';
-      document.getElementById('f-afstand-m').value=m||'';
+      document.getElementById('f-afstand-deci').value=decimaal||'';
+      document.getElementById('f-tijd-min').value=r.tijd_min||30;
       document.getElementById('f-weerstand').value=r.weerstand||'';
       document.getElementById('f-type').value=r.type_rit||'steady-state';
       document.getElementById('f-hs1').value=r.hs_0_10||'';
@@ -695,8 +703,15 @@ function renderInvoer(){
 // Een PR = de grootste afstand tot nu toe binnen hetzelfde type rit (steady-state, interval, duurtest, herstel)
 function berekenAfstandUitVelden(){
   const km=parseFloat(document.getElementById('f-afstand-km')?.value)||0;
-  const m=parseFloat(document.getElementById('f-afstand-m')?.value)||0;
-  return km + (m/1000);
+  const deciStr=(document.getElementById('f-afstand-deci')?.value||'').trim();
+  // Het tweede veld is de waarde NA de komma. "20" betekent ",20", niet 20 losse meters.
+  // Bij één cijfer (bijv. "2") wordt dat ",20" — twee cijfers ("20") blijft ",20".
+  let decimaal = 0;
+  if(deciStr){
+    const cijfers = deciStr.padEnd(2,'0').slice(0,2);
+    decimaal = parseInt(cijfers,10)/100;
+  }
+  return km + decimaal;
 }
 
 function isNieuwePR(afstand, type, excludeId){
@@ -786,7 +801,7 @@ async function slaOp(){
     datum:document.getElementById('f-datum').value,
     rit_nummer:editId?undefined:(ritten.length+1),
     afstand_km:afstand,
-    tijd_min:30,
+    tijd_min:parseInt(document.getElementById('f-tijd-min').value)||30,
     weerstand:parseInt(document.getElementById('f-weerstand').value)||null,
     type_rit:type,
     hs_0_10:document.getElementById('f-hs1').value||null,
