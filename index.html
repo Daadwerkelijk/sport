@@ -411,19 +411,33 @@ async function api(path,opts={}){
 
 async function laadRitten(){
   try{
-    const d=await api('fiets_ritten?select=*&order=rit_nummer.asc');
-    if(d&&d.length>0){ritten=d;}
+    const d=await api('fiets_ritten?select=*&order=datum.asc,id.asc');
+    if(d&&d.length>0){
+      ritten=d;
+      herNummerRitten();
+    }
     else if(d&&d.length===0&&ritten.length===0){
-      const ins=await api('fiets_ritten',{method:'POST',body:JSON.stringify(SEED)});ritten=ins||SEED;toon('15 ritten geladen ✓');
+      const ins=await api('fiets_ritten',{method:'POST',body:JSON.stringify(SEED)});ritten=ins||SEED;herNummerRitten();toon('15 ritten geladen ✓');
     }
     // Lege response maar we hadden al ritten in geheugen: niets overschrijven
   }catch(e){
     // Bij een fout NIET de bestaande ritten overschrijven met SEED-data.
     // Alleen als we nog helemaal niets hadden geladen, gebruiken we SEED als noodgreep.
-    if(ritten.length===0){ritten=SEED;}
+    if(ritten.length===0){ritten=SEED;herNummerRitten();}
     toon('Kon niet verversen — database mogelijk nog opstartend. Probeer opnieuw.');
   }
   document.getElementById('topbar-sub').textContent=ritten.length+' ritten';
+}
+
+// Rit-nummers zijn puur een weergave-volgnummer gebaseerd op datum-volgorde.
+// Dit voorkomt duplicate/verkeerde nummers wanneer ritten niet-chronologisch worden ingevoerd.
+function herNummerRitten(){
+  ritten = ritten.slice().sort((a,b)=>{
+    const da=new Date(a.datum||0), db=new Date(b.datum||0);
+    if(da-db!==0) return da-db;
+    return (a.id||0)-(b.id||0);
+  });
+  ritten.forEach((r,i)=>{ r._weergaveNr = i+1; });
 }
 
 // HELPERS
@@ -512,7 +526,12 @@ function renderDashboard(){
     </div>`;
 
   // Speed chart
-  const labels=ritten.map(r=>'R'+r.rit_nummer);
+  if(typeof Chart==='undefined'){
+    document.getElementById('c-speed').parentElement.innerHTML='<div class="empty" style="padding:20px;"><div class="empty-icon" style="font-size:22px;">📉</div><div style="font-size:12px;">Grafiekbibliotheek wordt geladen...</div></div>';
+    // Automatische retry: Chart.js was nog niet klaar bij eerste render
+    setTimeout(()=>{ if(typeof Chart!=='undefined') renderDashboard(); },600);
+  } else {
+  const labels=ritten.map(r=>'R'+r._weergaveNr);
   const speeds=ritten.map(r=>+kmh(r));
   const ptBg=ritten.map(r=>r.type_rit==='interval'?'#D85A30':'#1D9E75');
   const ptR=ritten.map(r=>r.is_pr?7:4);
@@ -529,15 +548,16 @@ function renderDashboard(){
   if(chartHerstel)chartHerstel.destroy();
   chartHerstel=new Chart(document.getElementById('c-herstel'),{
     type:'bar',
-    data:{labels:hr.map(r=>'R'+r.rit_nummer),datasets:[{data:hr.map(r=>r.herstel_sec),backgroundColor:hr.map(r=>r.type_rit==='interval'?'#F0997B':'#5DCAA5'),borderRadius:5}]},
+    data:{labels:hr.map(r=>'R'+r._weergaveNr),datasets:[{data:hr.map(r=>r.herstel_sec),backgroundColor:hr.map(r=>r.type_rit==='interval'?'#F0997B':'#5DCAA5'),borderRadius:5}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9}},grid:{display:false}},y:{ticks:{font:{size:9}},grid:{color:'#F0EFF9'}}}}
   });
+  }
 }
 
 // ── INVOER ────────────────────────────────────────────────
 function renderInvoer(){
   const el=document.getElementById('page-invoer');
-  const nr=editId?ritten.find(r=>r.id===editId)?.rit_nummer:(ritten.length+1);
+  const nr=editId?ritten.find(r=>r.id===editId)?._weergaveNr:(ritten.length+1);
   const today=new Date().toISOString().split('T')[0];
   el.innerHTML=`
     <div class="success-banner" id="inv-ok">✓ Rit opgeslagen!</div>
@@ -756,7 +776,7 @@ function filterOvz(){
   list.innerHTML=r.slice().reverse().map(rit=>`
     <div class="rit-card ${rit.is_pr?'is-pr':''}">
       <div class="rit-card-top">
-        <span class="rit-nr">Rit ${rit.rit_nummer||'—'}${rit.is_pr?' 🏆':''}</span>
+        <span class="rit-nr">Rit ${rit._weergaveNr||rit.rit_nummer||'—'}${rit.is_pr?' 🏆':''}</span>
         <span class="rit-datum">${fmtDatum(rit.datum)}</span>
       </div>
       <div class="rit-afstand">${(+rit.afstand_km||0).toFixed(2)} km</div>
@@ -789,7 +809,7 @@ async function verwijderRit(id){
 
 function exportCSV(){
   const h=['Rit','Datum','Afstand','Km/u','Stand','Type','Herstel sec','RPE','HS 0-10','HS 10-20','HS 20-30','Omstandigheden','Notities','PR'];
-  const rows=ritten.map(r=>[r.rit_nummer,r.datum,(+r.afstand_km).toFixed(2),kmh(r),r.weerstand||'',r.type_rit||'',r.herstel_sec||'',r.rpe||'',r.hs_0_10||'',r.hs_10_20||'',r.hs_20_30||'',r.omstandigheden||'',r.notities||'',r.is_pr?'ja':'']);
+  const rows=ritten.map(r=>[r._weergaveNr||r.rit_nummer,r.datum,(+r.afstand_km).toFixed(2),kmh(r),r.weerstand||'',r.type_rit||'',r.herstel_sec||'',r.rpe||'',r.hs_0_10||'',r.hs_10_20||'',r.hs_20_30||'',r.omstandigheden||'',r.notities||'',r.is_pr?'ja':'']);
   const csv=[h,...rows].map(r=>r.join(';')).join('\n');
   const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);a.download='fiets_ritten.csv';a.click();
 }
@@ -837,7 +857,7 @@ function renderAnalyse(){
     if(chartRpe)chartRpe.destroy();
     chartRpe=new Chart(document.getElementById('c-rpe'),{
       type:'scatter',
-      data:{datasets:[{data:rpeRitten.map(r=>({x:+r.rpe,y:+kmh(r),label:'R'+r.rit_nummer})),backgroundColor:'#7F77DD',pointRadius:7,pointHoverRadius:9}]},
+      data:{datasets:[{data:rpeRitten.map(r=>({x:+r.rpe,y:+kmh(r),label:'R'+r._weergaveNr})),backgroundColor:'#7F77DD',pointRadius:7,pointHoverRadius:9}]},
       options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw.label}: RPE ${c.raw.x} → ${c.raw.y} km/u`}}},scales:{x:{title:{display:true,text:'RPE',font:{size:11}},min:1,max:10,ticks:{font:{size:10}}},y:{title:{display:true,text:'km/u',font:{size:11}},ticks:{font:{size:10}}}}}
     });
   } else {
@@ -893,10 +913,10 @@ async function cacheSchoonmaken(){
 
 // INIT
 (async()=>{
-  renderDashboard();
   document.getElementById('page-dashboard').innerHTML='<div class="loading"><div class="spinner"></div>Ritten laden...</div>';
   await laadRitten();
   renderDashboard();
+
   if('serviceWorker' in navigator){
     navigator.serviceWorker.register('/sport/sw.js',{scope:'/sport/'}).then(reg=>{
       // Check direct bij opstarten of er een nieuwere service worker is
