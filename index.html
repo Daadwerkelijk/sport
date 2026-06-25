@@ -249,6 +249,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15
 <div class="page" id="page-invoer"></div>
 <div class="page" id="page-overzicht"></div>
 <div class="page" id="page-analyse"></div>
+<div class="page" id="page-omstandigheden"></div>
 
 <!-- BOTTOM NAV -->
 <nav class="bottom-nav">
@@ -282,6 +283,105 @@ const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const H={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'};
 
 let ritten=[], activeTags=new Set(), editId=null, activeFilter='all';
+
+// ── OMSTANDIGHEDEN BEHEER (lokaal opgeslagen, per toestel) ─────────
+const OMSTANDIGHEDEN_KEY='sporttracker_omstandigheden';
+const OMSTANDIGHEDEN_DEFAULT=[
+  {tag:'goed_geslapen',label:'Goed geslapen',cls:'goed'},
+  {tag:'slecht_geslapen',label:'Slecht geslapen',cls:'slecht'},
+  {tag:'warm',label:'Warm',cls:'warm'},
+  {tag:'vermoeid',label:'Vermoeid',cls:'moe'},
+  {tag:'hoofdpijn',label:'Hoofdpijn',cls:'hoofd'},
+];
+const TAG_KLEUREN=['goed','warm','moe','hoofd','slecht'];
+
+function getOmstandigheden(){
+  try{
+    const raw=localStorage.getItem(OMSTANDIGHEDEN_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  setOmstandigheden(OMSTANDIGHEDEN_DEFAULT);
+  return OMSTANDIGHEDEN_DEFAULT;
+}
+function setOmstandigheden(lijst){
+  try{localStorage.setItem(OMSTANDIGHEDEN_KEY,JSON.stringify(lijst));}catch(e){}
+}
+
+function renderOmstandighedenTags(){
+  const wrap=document.getElementById('tags-wrap');
+  if(!wrap) return;
+  const lijst=getOmstandigheden();
+  wrap.innerHTML=lijst.map(o=>`<div class="tag ${activeTags.has(o.tag)?'active-'+o.cls:''}" data-tag="${o.tag}" data-cls="${o.cls}">${o.label}</div>`).join('');
+  wrap.querySelectorAll('.tag').forEach(t=>{
+    t.addEventListener('click',()=>{
+      const tag=t.dataset.tag,cls=t.dataset.cls;
+      if(activeTags.has(tag)){activeTags.delete(tag);t.className='tag';}
+      else{activeTags.add(tag);t.className='tag active-'+cls;}
+    });
+  });
+}
+
+function renderOmstandighedenBeheer(){
+  const el=document.getElementById('page-omstandigheden');
+  const lijst=getOmstandigheden();
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+      <span onclick="navigate('invoer')" style="cursor:pointer;color:var(--p600);font-size:20px;">←</span>
+      <span style="font-size:17px;font-weight:600;">Omstandigheden beheren</span>
+    </div>
+    <div class="card">
+      <div class="card-title">Huidige opties</div>
+      <div id="omst-lijst"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Nieuwe optie toevoegen</div>
+      <div class="form-group"><label>Naam</label><input type="text" id="nieuw-omst-naam" placeholder="Bijv. Geblesseerd, Net gegeten..."></div>
+      <div class="form-group"><label>Kleur</label>
+        <select id="nieuw-omst-kleur">
+          <option value="goed">Groen (positief)</option>
+          <option value="warm">Oranje/rood (fysiek)</option>
+          <option value="moe">Amber (vermoeidheid)</option>
+          <option value="hoofd">Paars (overig)</option>
+          <option value="slecht">Grijs (negatief)</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="voegOmstandigheidToe()">Toevoegen</button>
+    </div>`;
+  renderOmstandighedenLijst();
+}
+
+function renderOmstandighedenLijst(){
+  const lijst=getOmstandigheden();
+  const wrap=document.getElementById('omst-lijst');
+  if(!lijst.length){wrap.innerHTML='<div class="empty" style="padding:20px;">Geen opties meer — voeg er een toe.</div>';return;}
+  wrap.innerHTML=lijst.map((o,i)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+      <span class="tag active-${o.cls}" style="cursor:default;">${o.label}</span>
+      <button onclick="verwijderOmstandigheid(${i})" style="background:none;border:none;color:var(--c600);font-size:13px;font-family:var(--font);cursor:pointer;padding:6px 10px;">Verwijderen</button>
+    </div>`).join('');
+}
+
+function voegOmstandigheidToe(){
+  const naam=document.getElementById('nieuw-omst-naam').value.trim();
+  if(!naam){toon('Vul een naam in');return;}
+  const kleur=document.getElementById('nieuw-omst-kleur').value;
+  const tag=naam.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+  const lijst=getOmstandigheden();
+  if(lijst.some(o=>o.tag===tag)){toon('Deze optie bestaat al');return;}
+  lijst.push({tag,label:naam,cls:kleur});
+  setOmstandigheden(lijst);
+  document.getElementById('nieuw-omst-naam').value='';
+  renderOmstandighedenLijst();
+  toon('Toegevoegd: '+naam);
+}
+
+function verwijderOmstandigheid(index){
+  const lijst=getOmstandigheden();
+  const verwijderd=lijst.splice(index,1)[0];
+  setOmstandigheden(lijst);
+  renderOmstandighedenLijst();
+  toon('Verwijderd: '+(verwijderd?.label||''));
+}
 let chartSpeed, chartHerstel, chartRpe;
 
 const SEED=[
@@ -350,11 +450,18 @@ function navigate(page){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
-  document.querySelector('[data-page="'+page+'"]').classList.add('active');
+  const navEl = document.querySelector('[data-page="'+page+'"]');
+  if(navEl) navEl.classList.add('active');
+  else {
+    // Submenu-pagina (zoals omstandigheden-beheer): houd de bijbehorende hoofdtab gemarkeerd
+    const fallback = document.querySelector('[data-page="invoer"]');
+    if(fallback) fallback.classList.add('active');
+  }
   if(page==='dashboard')renderDashboard();
   if(page==='overzicht')renderOverzicht();
   if(page==='analyse')renderAnalyse();
   if(page==='invoer')renderInvoer();
+  if(page==='omstandigheden')renderOmstandighedenBeheer();
 }
 document.querySelectorAll('.nav-item').forEach(n=>{
   n.addEventListener('click',()=>navigate(n.dataset.page));
@@ -440,18 +547,24 @@ function renderInvoer(){
     </div>
     <div class="form-row">
       <div class="form-group"><label>Datum</label><input type="date" id="f-datum" value="${today}"></div>
-      <div class="form-group"><label>Afstand (km)</label><input type="number" step="0.01" id="f-afstand" placeholder="15,47"></div>
-    </div>
-    <div class="form-row">
       <div class="form-group"><label>Weerstand</label><input type="number" id="f-weerstand" placeholder="11" min="1" max="25"></div>
-      <div class="form-group"><label>Type rit</label>
-        <select id="f-type">
-          <option value="steady-state">Steady-state</option>
-          <option value="interval">Interval</option>
-          <option value="duurtest">Duurtest</option>
-          <option value="herstel">Herstel</option>
-        </select>
+    </div>
+    <div class="form-group">
+      <label>Afstand</label>
+      <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center;">
+        <input type="number" id="f-afstand-km" placeholder="15" min="0">
+        <span style="text-align:center;color:var(--muted);font-size:13px;">km +</span>
+        <input type="number" id="f-afstand-m" placeholder="470" min="0" max="999">
       </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">tweede veld in meters, bijv. 470 m = 15,47 km</div>
+    </div>
+    <div class="form-group"><label>Type rit</label>
+      <select id="f-type" onchange="updatePrPreview()">
+        <option value="steady-state">Steady-state</option>
+        <option value="interval">Interval</option>
+        <option value="duurtest">Duurtest</option>
+        <option value="herstel">Herstel</option>
+      </select>
     </div>
     <div class="form-section">Hartslag per blok</div>
     <div class="hs-row" style="margin-bottom:12px;">
@@ -459,91 +572,141 @@ function renderInvoer(){
       <div class="hs-block"><div class="hs-block-label">10–20 min</div><input type="text" id="f-hs2" placeholder="&lt; 140"></div>
       <div class="hs-block last"><div class="hs-block-label">20–30 min</div><input type="text" id="f-hs3" placeholder="140–146"></div>
     </div>
-    <div class="form-row">
-      <div class="form-group"><label>Herstel naar 119 bpm</label><input type="text" id="f-herstel" placeholder="1 min 12 sec"></div>
-      <div class="form-group"><label>RPE (1–10)</label>
-        <select id="f-rpe">
-          <option value="">— kies —</option>
-          ${[1,2,3,4,5,6,7,8,9,10].map(i=>`<option value="${i}">${i}</option>`).join('')}
-        </select>
+    <div class="form-group">
+      <label>Herstel naar 119 bpm</label>
+      <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center;">
+        <input type="number" id="f-herstel-min" placeholder="1" min="0">
+        <span style="text-align:center;color:var(--muted);font-size:13px;">min</span>
+        <input type="number" id="f-herstel-sec" placeholder="12" min="0" max="59">
       </div>
     </div>
-    <div class="form-section">Omstandigheden</div>
-    <div class="tags" id="tags-wrap">
-      <div class="tag" data-tag="goed_geslapen" data-cls="goed">Goed geslapen</div>
-      <div class="tag" data-tag="slecht_geslapen" data-cls="slecht">Slecht geslapen</div>
-      <div class="tag" data-tag="warm" data-cls="warm">Warm</div>
-      <div class="tag" data-tag="vermoeid" data-cls="moe">Vermoeid</div>
-      <div class="tag" data-tag="hoofdpijn" data-cls="hoofd">Hoofdpijn</div>
+    <div class="form-group">
+      <label>RPE — ervaren inspanning (1–10) <span style="color:var(--muted);font-weight:400;">hoe zwaar de rit voor jou aanvoelde</span></label>
+      <select id="f-rpe">
+        <option value="">— kies —</option>
+        ${[1,2,3,4,5,6,7,8,9,10].map(i=>`<option value="${i}">${i}</option>`).join('')}
+      </select>
     </div>
-    <div class="form-group" style="margin-top:12px;"><label>Opmerkingen</label>
+    <div class="form-section" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>Omstandigheden</span>
+      <span onclick="navigate('omstandigheden')" style="color:var(--p600);font-weight:600;cursor:pointer;text-transform:none;letter-spacing:0;font-size:12px;">⚙️ Beheren</span>
+    </div>
+    <div class="tags" id="tags-wrap"></div>
+    <div class="form-group" style="margin-top:12px;">
+      <label>Opmerkingen</label>
       <textarea id="f-notities" placeholder="Ademhalingstechniek, bijzonderheden..."></textarea>
     </div>
-    <label class="pr-toggle" style="margin-bottom:16px;">
-      <input type="checkbox" id="f-pr">
-      <div class="pr-toggle-text">🏆 Dit is een persoonlijk record</div>
-    </label>
+    <div id="pr-preview" style="display:none;background:var(--a50);border:1px solid var(--a100);border-radius:12px;padding:12px 14px;margin-bottom:16px;align-items:center;gap:8px;">
+      <span style="font-size:20px;">🏆</span>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--a900);">Dit wordt een persoonlijk record!</div>
+        <div style="font-size:12px;color:var(--a600);" id="pr-preview-text"></div>
+      </div>
+    </div>
     <button class="btn btn-secondary" onclick="resetForm()">Wissen</button>
     <button class="btn btn-primary" onclick="slaOp()">Rit opslaan</button>`;
 
-  // tags
-  activeTags=new Set();
-  document.querySelectorAll('.tag').forEach(t=>{
-    t.addEventListener('click',()=>{
-      const tag=t.dataset.tag,cls=t.dataset.cls;
-      if(activeTags.has(tag)){activeTags.delete(tag);t.className='tag';}
-      else{activeTags.add(tag);t.className='tag active-'+cls;}
-    });
+  renderOmstandighedenTags();
+
+  // live PR-check bij elke wijziging in afstand
+  ['f-afstand-km','f-afstand-m'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', updatePrPreview);
   });
+
+  // tags init (oude losse listener verwijderd, zit nu in renderOmstandighedenTags)
+  activeTags = editId ? activeTags : new Set();
 
   // prefill bij bewerken
   if(editId){
     const r=ritten.find(x=>x.id===editId);
     if(r){
       document.getElementById('f-datum').value=r.datum||today;
-      document.getElementById('f-afstand').value=r.afstand_km||'';
+      const km=Math.floor(+r.afstand_km||0);
+      const m=Math.round(((+r.afstand_km||0)-km)*1000);
+      document.getElementById('f-afstand-km').value=km||'';
+      document.getElementById('f-afstand-m').value=m||'';
       document.getElementById('f-weerstand').value=r.weerstand||'';
       document.getElementById('f-type').value=r.type_rit||'steady-state';
       document.getElementById('f-hs1').value=r.hs_0_10||'';
       document.getElementById('f-hs2').value=r.hs_10_20||'';
       document.getElementById('f-hs3').value=r.hs_20_30||'';
-      document.getElementById('f-herstel').value=r.herstel_sec?fmtHerstel(r.herstel_sec):'';
+      if(r.herstel_sec){
+        document.getElementById('f-herstel-min').value=Math.floor(r.herstel_sec/60)||'';
+        document.getElementById('f-herstel-sec').value=r.herstel_sec%60||'';
+      }
       document.getElementById('f-rpe').value=r.rpe||'';
       document.getElementById('f-notities').value=r.notities||'';
-      document.getElementById('f-pr').checked=r.is_pr||false;
       activeTags=new Set((r.omstandigheden||'').split(',').filter(Boolean));
-      activeTags.forEach(tag=>{
-        const el=document.querySelector('[data-tag="'+tag+'"]');
-        if(el){el.className='tag active-'+el.dataset.cls;}
-      });
+      renderOmstandighedenTags();
+      updatePrPreview();
     }
+  } else {
+    updatePrPreview();
+  }
+}
+
+// PR-detectie: de app bepaalt zelf of een rit een PR is, gebaseerd op het type rit
+// Een PR = de grootste afstand tot nu toe binnen hetzelfde type rit (steady-state, interval, duurtest, herstel)
+function berekenAfstandUitVelden(){
+  const km=parseFloat(document.getElementById('f-afstand-km')?.value)||0;
+  const m=parseFloat(document.getElementById('f-afstand-m')?.value)||0;
+  return km + (m/1000);
+}
+
+function isNieuwePR(afstand, type, excludeId){
+  const zelfdeType = ritten.filter(r=>r.type_rit===type && r.id!==excludeId);
+  if(!zelfdeType.length) return afstand>0; // eerste rit van dit type is altijd een PR
+  const beste = Math.max(...zelfdeType.map(r=>+r.afstand_km||0));
+  return afstand > beste;
+}
+
+function updatePrPreview(){
+  const afstand = berekenAfstandUitVelden();
+  const type = document.getElementById('f-type')?.value || 'steady-state';
+  const preview = document.getElementById('pr-preview');
+  if(!preview) return;
+  if(afstand>0 && isNieuwePR(afstand, type, editId)){
+    preview.style.display='flex';
+    const zelfdeType=ritten.filter(r=>r.type_rit===type && r.id!==editId);
+    const vorigeBeste=zelfdeType.length?Math.max(...zelfdeType.map(r=>+r.afstand_km||0)):0;
+    document.getElementById('pr-preview-text').textContent = vorigeBeste>0
+      ? `${afstand.toFixed(2)} km verslaat je vorige record van ${vorigeBeste.toFixed(2)} km (${type})`
+      : `Eerste ${type}-rit — automatisch een record`;
+  } else {
+    preview.style.display='none';
   }
 }
 
 function resetForm(){editId=null;renderInvoer();}
 
 async function slaOp(){
-  const afstand=parseFloat((document.getElementById('f-afstand').value||'').replace(',','.'));
+  const afstand = berekenAfstandUitVelden();
   if(!afstand){toon('Vul minimaal een afstand in');return;}
+  const type = document.getElementById('f-type').value;
+  const herstelMin = parseInt(document.getElementById('f-herstel-min').value)||0;
+  const herstelSec = parseInt(document.getElementById('f-herstel-sec').value)||0;
+  const herstelTotaal = (herstelMin*60 + herstelSec) || null;
+  const isPr = isNieuwePR(afstand, type, editId);
+
   const payload={
     datum:document.getElementById('f-datum').value,
     rit_nummer:editId?undefined:(ritten.length+1),
     afstand_km:afstand,
     tijd_min:30,
     weerstand:parseInt(document.getElementById('f-weerstand').value)||null,
-    type_rit:document.getElementById('f-type').value,
+    type_rit:type,
     hs_0_10:document.getElementById('f-hs1').value||null,
     hs_10_20:document.getElementById('f-hs2').value||null,
     hs_20_30:document.getElementById('f-hs3').value||null,
-    herstel_sec:parsHerstel(document.getElementById('f-herstel').value),
+    herstel_sec:herstelTotaal,
     rpe:parseInt(document.getElementById('f-rpe').value)||null,
     omstandigheden:[...activeTags].join(',')||null,
     notities:document.getElementById('f-notities').value||null,
-    is_pr:document.getElementById('f-pr').checked,
+    is_pr:isPr,
   };
   try{
     if(editId){await api('fiets_ritten?id=eq.'+editId,{method:'PATCH',body:JSON.stringify(payload)});toon('Rit bijgewerkt ✓');editId=null;}
-    else{await api('fiets_ritten',{method:'POST',body:JSON.stringify(payload)});toon('Rit opgeslagen! 🎉');}
+    else{await api('fiets_ritten',{method:'POST',body:JSON.stringify(payload)});toon(isPr?'Nieuw record! 🏆':'Rit opgeslagen! 🎉');}
     document.getElementById('inv-ok').style.display='block';
     setTimeout(()=>{if(document.getElementById('inv-ok'))document.getElementById('inv-ok').style.display='none';},3000);
     await laadRitten();
