@@ -239,6 +239,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15
     Sport-Tracker
   </div>
   <div class="topbar-sub" id="topbar-sub">15 ritten</div>
+  <div id="cache-clean-btn" onclick="cacheSchoonmaken()" title="Cache wissen & verversen" style="margin-left:10px;padding:4px 6px;cursor:pointer;opacity:.7;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EEEDFE" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+  </div>
 </div>
 
 <!-- PAGES -->
@@ -697,6 +700,34 @@ function genereerAdviezen(){
   return adv;
 }
 
+// CACHE CLEANER
+async function cacheSchoonmaken(){
+  toon('Cache wissen...');
+  try{
+    // 1. Wis alle service worker caches
+    if('caches' in window){
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+    // 2. Vraag actieve service worker om ook zijn caches te wissen
+    if('serviceWorker' in navigator){
+      const reg = await navigator.serviceWorker.getRegistration();
+      if(reg && reg.active){
+        reg.active.postMessage({type:'CLEAR_CACHE'});
+      }
+      // 3. Forceer een update-check van de service worker zelf
+      if(reg) await reg.update();
+    }
+    toon('Cache gewist — app wordt herladen...');
+    setTimeout(() => {
+      // Harde reload zonder cache
+      window.location.reload(true);
+    }, 800);
+  }catch(e){
+    toon('Kon cache niet wissen — probeer handmatig te herladen');
+  }
+}
+
 // INIT
 (async()=>{
   renderDashboard();
@@ -704,7 +735,19 @@ function genereerAdviezen(){
   await laadRitten();
   renderDashboard();
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('/sport/sw.js',{scope:'/sport/'}).catch(()=>{});
+    navigator.serviceWorker.register('/sport/sw.js',{scope:'/sport/'}).then(reg=>{
+      // Check direct bij opstarten of er een nieuwere service worker is
+      reg.update();
+      // Als er een nieuwe versie geinstalleerd is, automatisch overschakelen
+      reg.addEventListener('updatefound',()=>{
+        const nieuweWorker=reg.installing;
+        nieuweWorker.addEventListener('statechange',()=>{
+          if(nieuweWorker.state==='installed' && navigator.serviceWorker.controller){
+            toon('Nieuwe versie beschikbaar — tik op ↻ om te verversen');
+          }
+        });
+      });
+    }).catch(()=>{});
   }
 })();
 </script>
