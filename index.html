@@ -310,8 +310,16 @@ async function laadRitten(){
   try{
     const d=await api('fiets_ritten?select=*&order=rit_nummer.asc');
     if(d&&d.length>0){ritten=d;}
-    else{const ins=await api('fiets_ritten',{method:'POST',body:JSON.stringify(SEED)});ritten=ins||SEED;toon('15 ritten geladen ✓');}
-  }catch(e){ritten=SEED;toon('Offline — lokale data');}
+    else if(d&&d.length===0&&ritten.length===0){
+      const ins=await api('fiets_ritten',{method:'POST',body:JSON.stringify(SEED)});ritten=ins||SEED;toon('15 ritten geladen ✓');
+    }
+    // Lege response maar we hadden al ritten in geheugen: niets overschrijven
+  }catch(e){
+    // Bij een fout NIET de bestaande ritten overschrijven met SEED-data.
+    // Alleen als we nog helemaal niets hadden geladen, gebruiken we SEED als noodgreep.
+    if(ritten.length===0){ritten=SEED;}
+    toon('Kon niet verversen — database mogelijk nog opstartend. Probeer opnieuw.');
+  }
   document.getElementById('topbar-sub').textContent=ritten.length+' ritten';
 }
 
