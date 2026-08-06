@@ -1,6 +1,6 @@
 // Sport-Tracker service worker
 // Versienummer ophogen bij elke nieuwe deploy zodat oude caches automatisch verwijderd worden
-const SW_VERSION = 'v3';
+const SW_VERSION = 'v4';
 const CACHE = 'sport-tracker-' + SW_VERSION;
 const ASSETS = [
   '/sport/',
