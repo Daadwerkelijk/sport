@@ -1006,7 +1006,10 @@ Schrijf direct en persoonlijk, maximaal 200 woorden. Gebruik geen opsommingsteke
   try{
     const resp = await fetch(`${SUPA_URL}/functions/v1/dynamic-action`,{
       method:'POST',
-      headers:{...H,'Content-Type':'application/json'},
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+SUPA_KEY
+      },
       body:JSON.stringify({prompt})
     });
     const data = await resp.json();
