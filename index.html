@@ -210,6 +210,21 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15
 .goal-fill.teal{background:var(--t400);}
 .goal-value{font-size:13px;font-weight:500;color:var(--text);}
 
+#claude-modal.open{display:flex;animation:slideUp .25s ease;}
+@keyframes slideUp{from{opacity:0;transform:translateY(40px);}to{opacity:1;transform:translateY(0);}}
+.claude-loading{display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px 0;color:var(--muted);}
+.claude-dot-anim{display:flex;gap:5px;}
+.claude-dot-anim span{width:7px;height:7px;border-radius:50%;background:var(--p400);animation:dotBounce .8s infinite;}
+.claude-dot-anim span:nth-child(2){animation-delay:.15s;}
+.claude-dot-anim span:nth-child(3){animation-delay:.3s;}
+@keyframes dotBounce{0%,80%,100%{transform:scale(.7);opacity:.5;}40%{transform:scale(1);opacity:1;}}
+.claude-section{margin-bottom:14px;}
+.claude-section-title{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;}
+.claude-block{background:var(--p50);border-left:3px solid var(--p400);border-radius:0 10px 10px 0;padding:10px 12px;margin-bottom:8px;font-size:13px;color:var(--p900);line-height:1.6;}
+.claude-block.groen{background:var(--t50);border-color:var(--t400);color:var(--t900);}
+.claude-block.amber{background:var(--a50);border-color:var(--a400);color:var(--a900);}
+.claude-block.coral{background:var(--c50);border-color:var(--c400);color:var(--c900);}
+
 /* TOAST */
 .toast{position:fixed;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 12px);
   left:50%;transform:translateX(-50%) translateY(20px);
@@ -276,6 +291,21 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15
 </nav>
 
 <div class="toast" id="toast"></div>
+
+<!-- Claude analyse modal -->
+<div id="claude-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(38,33,92,.45);backdrop-filter:blur(4px);padding:20px;align-items:flex-end;">
+  <div style="background:var(--white);border-radius:20px 20px 0 0;width:100%;max-height:80vh;overflow-y:auto;padding:20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:28px;height:28px;background:var(--p600);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;">🤖</div>
+        <span style="font-size:15px;font-weight:600;color:var(--p900);">Claude analyse</span>
+      </div>
+      <button onclick="sluitModal()" style="background:var(--bg);border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:18px;color:var(--muted);">×</button>
+    </div>
+    <div id="claude-rit-info" style="background:var(--p50);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:13px;color:var(--p800);"></div>
+    <div id="claude-output" style="font-size:14px;line-height:1.7;color:var(--text);min-height:80px;"></div>
+  </div>
+</div>
 
 <script>
 const SUPA_URL='https://wvtvcfmdkyzuptnuawuy.supabase.co';
@@ -815,12 +845,22 @@ async function slaOp(){
   };
   try{
     if(editId){await api('fiets_ritten?id=eq.'+editId,{method:'PATCH',body:JSON.stringify(payload)});toon('Rit bijgewerkt ✓');editId=null;}
-    else{await api('fiets_ritten',{method:'POST',body:JSON.stringify(payload)});toon(isPr?'Nieuw record! 🏆':'Rit opgeslagen! 🎉');}
+    else{
+      await api('fiets_ritten',{method:'POST',body:JSON.stringify(payload)});
+      toon(isPr?'Nieuw record! 🏆 Claude analyseert...':'Rit opgeslagen! 🎉 Claude analyseert...');
+    }
     document.getElementById('inv-ok').style.display='block';
     setTimeout(()=>{if(document.getElementById('inv-ok'))document.getElementById('inv-ok').style.display='none';},3000);
     await laadRitten();
     document.getElementById('topbar-sub').textContent=ritten.length+' ritten';
     resetForm();
+    // Automatische Claude analyse na opslaan nieuwe rit
+    if(!editId){
+      const nieuwsteRit = ritten[ritten.length-1];
+      if(nieuwsteRit){
+        setTimeout(()=>analyseerRit(nieuwsteRit.id), 600);
+      }
+    }
   }catch(e){toon('Opslaan mislukt — check verbinding');}
 }
 
@@ -885,6 +925,7 @@ function filterOvz(){
         <button class="rit-btn edit" onclick="bewerkRit(${rit.id})">✏️ Bewerken</button>
         <button class="rit-btn del" onclick="verwijderRit(${rit.id})">🗑️ Verwijderen</button>
       </div>
+      <button class="rit-btn" style="width:100%;margin-top:6px;background:var(--p50);color:var(--p800);border-color:var(--p200);font-weight:500;" onclick="analyseerRit(${rit.id})">🤖 Claude analyse</button>
     </div>`).join('');
   document.getElementById('ovz-count').textContent=r.length+' ritten';
 }
@@ -903,7 +944,103 @@ function exportCSV(){
   const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);a.download='fiets_ritten.csv';a.click();
 }
 
-// ── ANALYSE ───────────────────────────────────────────────
+// ── CLAUDE ANALYSE ────────────────────────────────────────
+function bouwRitContext(rit){
+  const s = r => r ? String(r) : '—';
+  return `Rit ${rit._weergaveNr||rit.rit_nummer} op ${rit.datum||'onbekend'}:
+- Afstand: ${(+rit.afstand_km||0).toFixed(2)} km in ${rit.tijd_min||30} min (${kmh(rit)} km/u)
+- Type: ${s(rit.type_rit)} | Weerstand: stand ${s(rit.weerstand)}
+- Hartslag 0-10 min: ${s(rit.hs_0_10)} | 10-20 min: ${s(rit.hs_10_20)} | 20-30 min: ${s(rit.hs_20_30)}
+- Herstel naar 119 bpm: ${rit.herstel_sec ? fmtHerstel(rit.herstel_sec) : '—'}
+- RPE (ervaren inspanning): ${s(rit.rpe)}/10
+- Omstandigheden: ${rit.omstandigheden ? rit.omstandigheden.replace(/_/g,' ') : 'geen'}
+- Notities: ${s(rit.notities)}
+- Persoonlijk record: ${rit.is_pr ? 'ja' : 'nee'}`;
+}
+
+function bouwHistorieContext(){
+  const laatste = ritten.slice(-10);
+  return laatste.map(r=>
+    `R${r._weergaveNr||r.rit_nummer}: ${(+r.afstand_km||0).toFixed(2)}km ${kmh(r)}km/u ${r.type_rit} stand${r.weerstand||'?'}${r.is_pr?' 🏆':''}`
+  ).join('\n');
+}
+
+function sluitModal(){
+  document.getElementById('claude-modal').classList.remove('open');
+  setTimeout(()=>document.getElementById('claude-modal').style.display='none',250);
+}
+
+function toonModal(rit){
+  const modal=document.getElementById('claude-modal');
+  const ritInfo=document.getElementById('claude-rit-info');
+  const output=document.getElementById('claude-output');
+  ritInfo.textContent=`Rit ${rit._weergaveNr||rit.rit_nummer} · ${fmtDatum(rit.datum)} · ${(+rit.afstand_km||0).toFixed(2)} km · ${kmh(rit)} km/u`;
+  output.innerHTML=`<div class="claude-loading"><div class="claude-dot-anim"><span></span><span></span><span></span></div><div style="font-size:13px;">Claude analyseert je rit...</div></div>`;
+  modal.style.display='flex';
+  setTimeout(()=>modal.classList.add('open'),10);
+}
+
+async function analyseerRit(id){
+  const rit = ritten.find(r=>r.id===id);
+  if(!rit){toon('Rit niet gevonden');return;}
+  toonModal(rit);
+  const output=document.getElementById('claude-output');
+
+  const prompt=`Je bent een ervaren sportinstructeur gespecialiseerd in cardio en fietstraining.
+Een atleet heeft zojuist een rit geregistreerd. Analyseer deze rit in vergelijking met de recente ritten en geef persoonlijk, concreet advies.
+
+=== RECENTE RITTEN (laatste 10, voor context) ===
+${bouwHistorieContext()}
+
+=== DEZE RIT ===
+${bouwRitContext(rit)}
+
+Geef je analyse in deze structuur:
+1. **Prestatie** – hoe was deze rit t.o.v. eerdere ritten? Noem concrete cijfers.
+2. **Hartslag & herstel** – wat zegt het hartslagpatroon en de hersteltijd over de conditie?
+3. **Aandachtspunten** – wat valt op (positief of zorgpunt)?
+4. **Advies voor de volgende rit** – één concrete aanbeveling.
+
+Schrijf direct en persoonlijk, maximaal 200 woorden. Gebruik geen opsommingstekens maar gewone alinea's per punt.`;
+
+  try{
+    const resp = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:1000,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data = await resp.json();
+    const tekst = data.content?.map(b=>b.text||'').join('') || 'Geen analyse ontvangen.';
+
+    // Verwerk de tekst — splits op genummerde headers en geef elk een eigen stijlblok
+    const secties = tekst.split(/\n(?=\d\.)/).filter(Boolean);
+    if(secties.length>=2){
+      const kleuren=['groen','','amber',''];
+      output.innerHTML = secties.map((s,i)=>{
+        const titel = s.match(/^\d+\.\s+\*\*(.+?)\*\*/)?.[1] || '';
+        const inhoud = s.replace(/^\d+\.\s+\*\*(.+?)\*\*\s*[–-]?\s*/,'').trim();
+        return `<div class="claude-section">
+          ${titel?`<div class="claude-section-title">${titel}</div>`:''}
+          <div class="claude-block ${kleuren[i]||''}">${inhoud}</div>
+        </div>`;
+      }).join('');
+    } else {
+      // Als de structuur anders uitvalt, gewoon als tekst tonen
+      output.innerHTML=`<div class="claude-block">${tekst.replace(/\n/g,'<br>')}</div>`;
+    }
+  }catch(e){
+    output.innerHTML=`<div class="claude-block coral">Analyse niet beschikbaar — controleer je verbinding.</div>`;
+  }
+}
+
+// Sluit modal bij klik op de achtergrond
+document.getElementById('claude-modal').addEventListener('click',function(e){
+  if(e.target===this) sluitModal();
+});
 function renderAnalyse(){
   const el=document.getElementById('page-analyse');
   const beste=Math.max(...ritten.map(r=>+r.afstand_km||0));
