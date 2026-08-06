@@ -1004,14 +1004,10 @@ Geef je analyse in deze structuur:
 Schrijf direct en persoonlijk, maximaal 200 woorden. Gebruik geen opsommingstekens maar gewone alinea's per punt.`;
 
   try{
-    const resp = await fetch('https://api.anthropic.com/v1/messages',{
+    const resp = await fetch(`${SUPA_URL}/functions/v1/claude-analyse`,{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-6',
-        max_tokens:1000,
-        messages:[{role:'user',content:prompt}]
-      })
+      headers:{...H,'Content-Type':'application/json'},
+      body:JSON.stringify({prompt})
     });
     const data = await resp.json();
     const tekst = data.content?.map(b=>b.text||'').join('') || 'Geen analyse ontvangen.';
