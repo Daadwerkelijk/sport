@@ -1004,7 +1004,7 @@ Geef je analyse in deze structuur:
 Schrijf direct en persoonlijk, maximaal 200 woorden. Gebruik geen opsommingstekens maar gewone alinea's per punt.`;
 
   try{
-    const resp = await fetch(`${SUPA_URL}/functions/v1/claude-analyse`,{
+    const resp = await fetch(`${SUPA_URL}/functions/v1/dynamic-action`,{
       method:'POST',
       headers:{...H,'Content-Type':'application/json'},
       body:JSON.stringify({prompt})
