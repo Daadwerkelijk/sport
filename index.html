@@ -426,7 +426,7 @@ const SEED=[
   {datum:'2025-03-29',rit_nummer:9,afstand_km:14.86,tijd_min:30,weerstand:11,type_rit:'interval',hs_0_10:'pieken 150-160',hs_10_20:'dalen 120-125',hs_20_30:'dalen 120-125',herstel_sec:32,rpe:null,omstandigheden:'',notities:'Bewust rustig aan gedaan',is_pr:false},
   {datum:'2025-04-02',rit_nummer:10,afstand_km:15.89,tijd_min:30,weerstand:11,type_rit:'steady-state',hs_0_10:'<140',hs_10_20:'<140',hs_20_30:'~145',herstel_sec:65,rpe:null,omstandigheden:'',notities:'Nieuwe PR',is_pr:true},
   {datum:'2025-04-05',rit_nummer:11,afstand_km:15.72,tijd_min:30,weerstand:12,type_rit:'steady-state',hs_0_10:'<140',hs_10_20:'140-145',hs_20_30:'145-150',herstel_sec:59,rpe:null,omstandigheden:'',notities:'',is_pr:false},
-  {datum:'2025-04-09',rit_nummer:12,afstand_km:15.99,tijd_min:30,weerstand:11,type_rit:'duurtest',hs_0_10:'>140',hs_10_20:'150-155',hs_20_30:'150-155',herstel_sec:93,rpe:null,omstandigheden:'hoofdpijn,slecht_geslapen',notities:'Nieuwe PR — hoofdpijn, kort geslapen',is_pr:true},
+  {datum:'2025-04-09',rit_nummer:12,afstand_km:15.99,tijd_min:30,weerstand:11,type_rit:'steady-state',hs_0_10:'>140',hs_10_20:'150-155',hs_20_30:'150-155',herstel_sec:93,rpe:null,omstandigheden:'hoofdpijn,slecht_geslapen',notities:'Nieuwe PR — hoofdpijn, kort geslapen',is_pr:true},
   {datum:'2025-04-12',rit_nummer:13,afstand_km:15.28,tijd_min:30,weerstand:12,type_rit:'interval',hs_0_10:'~146',hs_10_20:'~146',hs_20_30:'~146',herstel_sec:80,rpe:null,omstandigheden:'',notities:'3 pieken boven 35 km/u — gem 146 bpm',is_pr:false},
   {datum:'2025-04-16',rit_nummer:14,afstand_km:15.98,tijd_min:30,weerstand:11,type_rit:'steady-state',hs_0_10:'<140',hs_10_20:'<145',hs_20_30:'>150',herstel_sec:72,rpe:null,omstandigheden:'',notities:'Nieuwe PR — ademhalingstechniek',is_pr:true},
   {datum:'2025-06-05',rit_nummer:15,afstand_km:15.99,tijd_min:30,weerstand:11,type_rit:'steady-state',hs_0_10:'<140',hs_10_20:'rondom 140',hs_20_30:'140-150',herstel_sec:104,rpe:null,omstandigheden:'warm',notities:'Zweten — warm. Gedeelde PR',is_pr:false},
@@ -645,7 +645,6 @@ function renderInvoer(){
       <select id="f-type" onchange="updatePrPreview()">
         <option value="steady-state">Steady-state</option>
         <option value="interval">Interval</option>
-        <option value="duurtest">Duurtest</option>
         <option value="herstel">Herstel</option>
       </select>
     </div>
@@ -730,7 +729,7 @@ function renderInvoer(){
 }
 
 // PR-detectie: de app bepaalt zelf of een rit een PR is, gebaseerd op het type rit
-// Een PR = de grootste afstand tot nu toe binnen hetzelfde type rit (steady-state, interval, duurtest, herstel)
+// Een PR = de grootste afstand tot nu toe binnen hetzelfde type rit (steady-state, interval, herstel)
 function berekenAfstandUitVelden(){
   const km=parseFloat(document.getElementById('f-afstand-km')?.value)||0;
   const deciStr=(document.getElementById('f-afstand-deci')?.value||'').trim();
@@ -875,7 +874,7 @@ function renderOverzicht(){
       <div class="filter-pill active" data-f="all" onclick="setF(this,'all')">Alle</div>
       <div class="filter-pill" data-f="steady-state" onclick="setF(this,'steady-state')">Steady-state</div>
       <div class="filter-pill" data-f="interval" onclick="setF(this,'interval')">Interval</div>
-      <div class="filter-pill" data-f="duurtest" onclick="setF(this,'duurtest')">Duurtest</div>
+      
       <div class="filter-pill" data-f="pr" onclick="setF(this,'pr')">Alleen PR's</div>
     </div>
     <div id="rit-list"></div>
@@ -1081,7 +1080,7 @@ function renderAnalyse(){
         Beheer
       </div>
       <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px;">
-        Klopt het aantal PR's niet meer met je verwachting (bijv. na het invoeren van oudere ritten)? Herberekenen loopt door alle ritten in datumvolgorde en bepaalt per type rit (steady-state, interval, duurtest, herstel) opnieuw welke ritten op dat moment een record waren.
+        Klopt het aantal PR's niet meer met je verwachting (bijv. na het invoeren van oudere ritten)? Herberekenen loopt door alle ritten in datumvolgorde en bepaalt per type rit (steady-state, interval, herstel) opnieuw welke ritten op dat moment een record waren.
       </div>
       <button class="btn btn-secondary" style="margin-bottom:0;" onclick="herberekenAllePRs()">🔄 PR's herberekenen</button>
     </div>`;
@@ -1102,9 +1101,9 @@ function renderAnalyse(){
 
 function genereerAdviezen(){
   const adv=[];
-  const steady=ritten.filter(r=>r.type_rit==='steady-state'||r.type_rit==='duurtest');
+  const steady=ritten.filter(r=>r.type_rit==='steady-state');
   const laatste5=ritten.slice(-5);
-  const consec=laatste5.slice(-3).every(r=>r.type_rit==='steady-state'||r.type_rit==='duurtest');
+  const consec=laatste5.slice(-3).every(r=>r.type_rit==='steady-state');
   const intLaatste=laatste5.filter(r=>r.type_rit==='interval').length;
   const beste=Math.max(...steady.map(r=>+r.afstand_km||0));
   const warmRitten=ritten.filter(r=>(r.omstandigheden||'').includes('warm'));
