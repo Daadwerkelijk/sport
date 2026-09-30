@@ -1,7 +1,10 @@
 // Sport-Tracker service worker
 // Versienummer ophogen bij elke nieuwe deploy zodat oude caches automatisch verwijderd worden
-const SW_VERSION = 'v4';
-const CACHE = 'sport-tracker-' + SW_VERSION;
+const SW_VERSION = 'v5';
+// Andere apps van de gebruiker draaien op hetzelfde domein (daadwerkelijk.github.io)
+// en delen de cache-opslag: alleen caches met dit voorvoegsel zijn van sport.
+const VOORVOEGSEL = 'sport-tracker-';
+const CACHE = VOORVOEGSEL + SW_VERSION;
 const ASSETS = [
   '/sport/',
   '/sport/index.html',
@@ -18,7 +21,7 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+      Promise.all(keys.filter(k => k.startsWith(VOORVOEGSEL) && k !== CACHE).map(k => caches.delete(k)))
     )
   );
   self.clients.claim();
@@ -28,7 +31,7 @@ self.addEventListener('activate', e => {
 self.addEventListener('message', e => {
   if(e.data && e.data.type === 'CLEAR_CACHE'){
     caches.keys().then(keys => {
-      Promise.all(keys.map(k => caches.delete(k))).then(() => {
+      Promise.all(keys.filter(k => k.startsWith(VOORVOEGSEL)).map(k => caches.delete(k))).then(() => {
         e.source.postMessage({type:'CACHE_CLEARED'});
       });
     });
