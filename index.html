@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Sport Tracker</title>
+<link rel="manifest" href="/sport/manifest.json">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -941,6 +942,14 @@ async function renderVoortgang() {
 
 // ── INIT ──────────────────────────────────────────────
 loadHome();
+
+// Service worker registratie (vereist voor PWA installatie)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sport/sw.js')
+      .catch(err => console.warn('SW registratie mislukt:', err));
+  });
+}
 </script>
 </body>
 </html>

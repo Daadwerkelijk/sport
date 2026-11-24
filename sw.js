@@ -1,6 +1,6 @@
 // Sport-Tracker service worker
 // Versienummer ophogen bij elke nieuwe deploy zodat oude caches automatisch verwijderd worden
-const SW_VERSION = 'v5';
+const SW_VERSION = 'v6';
 // Andere apps van de gebruiker draaien op hetzelfde domein (daadwerkelijk.github.io)
 // en delen de cache-opslag: alleen caches met dit voorvoegsel zijn van sport.
 const VOORVOEGSEL = 'sport-tracker-';
