@@ -2,1172 +2,945 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#534AB7">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#0f1117">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Sport-Tracker">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
-<title>Sport-Tracker</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600&display=swap" rel="stylesheet">
+<title>Sport Tracker</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{
-  --p50:#EEEDFE;--p100:#CECBF6;--p200:#AFA9EC;--p400:#7F77DD;--p600:#534AB7;--p800:#3C3489;--p900:#26215C;
-  --t50:#E1F5EE;--t100:#9FE1CB;--t400:#1D9E75;--t600:#0F6E56;--t800:#085041;
-  --c50:#FAECE7;--c100:#F5C4B3;--c400:#D85A30;--c600:#993C1D;--c800:#712B13;
-  --a50:#FAEEDA;--a100:#FAC775;--a400:#BA7517;--a600:#854F0B;--a900:#412402;
-  --bg:#F4F3FF;--white:#fff;--text:#1a1a2e;--muted:#6b6b8a;--border:#E0DFF7;
-  --nav-h:64px;--top-h:56px;
-  --font:'DM Sans',sans-serif;
+:root {
+  --bg:#0f1117;--surface:#1a1f2e;--surface2:#242b3d;--border:#2e3650;
+  --accent:#e85d26;--green:#22c55e;--purple:#8b5cf6;--blue:#3b82f6;
+  --yellow:#f59e0b;--red:#ef4444;--text:#e2e8f0;--muted:#94a3b8;
+  --radius:12px;--nav-h:64px;
 }
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{height:100%;overscroll-behavior:none;}
-body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15px;
-  padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom));}
-
-/* TOP BAR */
-.topbar{background:var(--p600);height:var(--top-h);display:flex;align-items:center;
-  padding:0 16px;position:sticky;top:0;z-index:100;
-  padding-top:env(safe-area-inset-top);}
-.topbar-title{color:var(--p50);font-size:17px;font-weight:600;display:flex;align-items:center;gap:8px;}
-.topbar-title svg{opacity:.85;}
-.topbar-sub{color:var(--p200);font-size:13px;margin-left:auto;}
-
-/* BOTTOM NAV */
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;
-  background:var(--white);border-top:1px solid var(--border);
-  display:flex;align-items:stretch;
-  height:calc(var(--nav-h) + env(safe-area-inset-bottom));
-  padding-bottom:env(safe-area-inset-bottom);
-  z-index:100;box-shadow:0 -2px 12px rgba(83,74,183,.08);}
-.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;gap:3px;cursor:pointer;
-  color:var(--muted);font-size:10px;font-weight:500;
-  padding:8px 0;transition:color .15s;}
-.nav-item svg{transition:transform .15s;}
-.nav-item.active{color:var(--p600);}
-.nav-item.active svg{transform:scale(1.1);}
-.nav-item.active .nav-dot{background:var(--p600);}
-.nav-dot{width:4px;height:4px;border-radius:50%;background:transparent;transition:background .15s;}
-
-/* PAGES */
-.page{display:none;padding:16px;padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 16px);animation:fadeIn .18s ease;}
-.page.active{display:block;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
-
-/* CARDS */
-.card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;}
-.card-title{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:10px;
-  display:flex;align-items:center;gap:5px;text-transform:uppercase;letter-spacing:.04em;}
-.card-title svg{color:var(--p400);}
-
-/* STAT ROW */
-.stat-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
-.stat-card{border-radius:12px;padding:12px 14px;}
-.stat-card.purple{background:var(--p50);}
-.stat-card.teal{background:var(--t50);}
-.stat-card.amber{background:var(--a50);}
-.stat-card.coral{background:var(--c50);}
-.stat-label{font-size:11px;font-weight:600;margin-bottom:3px;}
-.stat-card.purple .stat-label{color:var(--p600);}
-.stat-card.teal .stat-label{color:var(--t600);}
-.stat-card.amber .stat-label{color:var(--a600);}
-.stat-card.coral .stat-label{color:var(--c600);}
-.stat-value{font-size:26px;font-weight:600;line-height:1;}
-.stat-card.purple .stat-value{color:var(--p900);}
-.stat-card.teal .stat-value{color:var(--t800);}
-.stat-card.amber .stat-value{color:var(--a900);}
-.stat-card.coral .stat-value{color:var(--c800);}
-.stat-unit{font-size:12px;font-weight:400;opacity:.65;}
-
-/* CHART */
-.chart-wrap{position:relative;height:160px;}
-
-/* INSIGHT */
-.insight{background:var(--a50);border-radius:12px;padding:12px 14px;
-  display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;}
-.insight-icon{font-size:20px;flex-shrink:0;}
-.insight-title{font-size:13px;font-weight:600;color:var(--a900);margin-bottom:2px;}
-.insight-text{font-size:12px;color:var(--a600);line-height:1.5;}
-
-/* RIT CARDS (overzicht) */
-.rit-card{background:var(--white);border:1px solid var(--border);border-radius:14px;
-  padding:14px;margin-bottom:10px;position:relative;}
-.rit-card.is-pr{border-color:var(--a100);background:linear-gradient(135deg,#fffdf5 0%,var(--white) 100%);}
-.rit-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
-.rit-nr{font-size:13px;font-weight:600;color:var(--muted);}
-.rit-datum{font-size:13px;color:var(--muted);}
-.rit-afstand{font-size:28px;font-weight:700;color:var(--p900);line-height:1;}
-.rit-kmh{font-size:14px;color:var(--muted);margin-top:1px;}
-.rit-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
-.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:100px;font-size:11px;font-weight:600;}
-.badge.steady{background:var(--t50);color:var(--t800);border:1px solid var(--t100);}
-.badge.interval{background:var(--c50);color:var(--c800);border:1px solid var(--c100);}
-.badge.duurtest{background:var(--p50);color:var(--p800);border:1px solid var(--p100);}
-.badge.herstel{background:#f0f0f0;color:#555;border:1px solid #ddd;}
-.badge.pr{background:var(--a50);color:var(--a900);border:1px solid var(--a100);}
-.badge.stand{background:var(--p50);color:var(--p800);border:1px solid var(--p100);}
-.rit-notitie{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.4;}
-.rit-actions{display:flex;gap:6px;margin-top:8px;}
-.rit-btn{flex:1;border:1px solid var(--border);border-radius:8px;padding:7px;
-  font-size:12px;font-weight:500;background:var(--white);cursor:pointer;
-  font-family:var(--font);color:var(--muted);transition:all .15s;}
-.rit-btn.edit:active{background:var(--p50);color:var(--p600);border-color:var(--p200);}
-.rit-btn.del:active{background:var(--c50);color:var(--c600);border-color:var(--c100);}
-
-/* SEARCH */
-.search-wrap{margin-bottom:12px;}
-.search-box{width:100%;border:1px solid var(--border);border-radius:12px;
-  padding:11px 14px;font-family:var(--font);font-size:15px;
-  background:var(--white);outline:none;color:var(--text);}
-.search-box:focus{border-color:var(--p400);}
-.filter-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;
-  scrollbar-width:none;}
-.filter-row::-webkit-scrollbar{display:none;}
-.filter-pill{border:1px solid var(--border);border-radius:100px;padding:6px 14px;
-  font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer;
-  background:var(--white);color:var(--muted);transition:all .15s;font-family:var(--font);}
-.filter-pill.active{background:var(--p600);color:var(--white);border-color:var(--p600);}
-
-/* FORM */
-.form-section{font-size:12px;font-weight:600;color:var(--muted);
-  text-transform:uppercase;letter-spacing:.05em;margin:16px 0 8px;}
-.form-group{margin-bottom:12px;}
-.form-group label{font-size:13px;font-weight:500;color:var(--text);display:block;margin-bottom:5px;}
-.form-group input,.form-group select,.form-group textarea{
-  width:100%;border:1px solid var(--border);border-radius:12px;
-  padding:12px 14px;font-family:var(--font);font-size:15px;
-  color:var(--text);background:var(--white);outline:none;
-  transition:border-color .15s;-webkit-appearance:none;}
-.form-group select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6b8a' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;}
-.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--p400);}
-.form-group textarea{resize:none;height:80px;line-height:1.5;}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.hs-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
-.hs-block{background:var(--p50);border-radius:12px;padding:10px 12px;}
-.hs-block.last{background:var(--a50);}
-.hs-block-label{font-size:10px;font-weight:600;color:var(--p600);margin-bottom:5px;}
-.hs-block.last .hs-block-label{color:var(--a600);}
-.hs-block input{border:1px solid var(--p100);border-radius:8px;padding:7px 8px;
-  font-size:14px;color:var(--p900);background:var(--white);
-  width:100%;outline:none;font-family:var(--font);}
-.hs-block.last input{border-color:var(--a100);color:var(--a900);}
-
-.tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px;}
-.tag{border:1px solid var(--border);border-radius:100px;padding:7px 14px;
-  font-size:13px;cursor:pointer;color:var(--muted);background:var(--white);
-  font-family:var(--font);transition:all .15s;}
-.tag.active-goed{border-color:var(--t400);background:var(--t50);color:var(--t800);}
-.tag.active-warm{border-color:var(--c400);background:var(--c50);color:var(--c800);}
-.tag.active-moe{border-color:var(--a400);background:var(--a50);color:var(--a900);}
-.tag.active-hoofd{border-color:var(--p400);background:var(--p50);color:var(--p800);}
-.tag.active-slecht{border-color:#999;background:#f5f5f5;color:#444;}
-
-.pr-toggle{display:flex;align-items:center;gap:10px;padding:14px;
-  background:var(--a50);border-radius:12px;border:1px solid var(--a100);cursor:pointer;}
-.pr-toggle-text{font-size:14px;font-weight:500;color:var(--a900);}
-.pr-toggle input{width:20px;height:20px;accent-color:var(--a400);cursor:pointer;}
-
-.btn{width:100%;border-radius:12px;padding:14px;font-family:var(--font);
-  font-size:16px;font-weight:600;cursor:pointer;border:none;transition:all .15s;}
-.btn-primary{background:var(--p600);color:var(--white);}
-.btn-primary:active{background:var(--p800);}
-.btn-secondary{background:var(--white);color:var(--muted);border:1px solid var(--border);margin-bottom:10px;}
-.btn-secondary:active{background:var(--bg);}
-.btn-success{background:var(--t400);color:var(--white);}
-
-/* SUCCESS BANNER */
-.success-banner{background:var(--t50);border:1px solid var(--t100);border-radius:12px;
-  padding:12px 14px;margin-bottom:14px;font-size:14px;color:var(--t800);
-  font-weight:500;display:none;}
-
-/* ANALYSE */
-.advice{border-left:3px solid;padding:10px 14px;border-radius:0 12px 12px 0;margin-bottom:8px;}
-.advice.green{border-color:var(--t400);background:var(--t50);}
-.advice.green .adv-title{color:var(--t800);}
-.advice.green .adv-text{color:var(--t600);}
-.advice.amber{border-color:var(--a400);background:var(--a50);}
-.advice.amber .adv-title{color:var(--a900);}
-.advice.amber .adv-text{color:var(--a600);}
-.advice.purple{border-color:var(--p400);background:var(--p50);}
-.advice.purple .adv-title{color:var(--p800);}
-.advice.purple .adv-text{color:var(--p600);}
-.advice.coral{border-color:var(--c400);background:var(--c50);}
-.advice.coral .adv-title{color:var(--c800);}
-.advice.coral .adv-text{color:var(--c600);}
-.adv-title{font-size:13px;font-weight:600;margin-bottom:3px;}
-.adv-text{font-size:13px;line-height:1.5;}
-
-.goal-card{background:var(--white);border:1px solid var(--border);border-radius:12px;
-  padding:12px 14px;margin-bottom:8px;}
-.goal-label{font-size:12px;color:var(--muted);margin-bottom:6px;}
-.goal-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:5px;}
-.goal-fill{height:100%;border-radius:4px;transition:width .6s ease;}
-.goal-fill.purple{background:var(--p400);}
-.goal-fill.teal{background:var(--t400);}
-.goal-value{font-size:13px;font-weight:500;color:var(--text);}
-
-#claude-modal.open{display:flex;animation:slideUp .25s ease;}
-@keyframes slideUp{from{opacity:0;transform:translateY(40px);}to{opacity:1;transform:translateY(0);}}
-.claude-loading{display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px 0;color:var(--muted);}
-.claude-dot-anim{display:flex;gap:5px;}
-.claude-dot-anim span{width:7px;height:7px;border-radius:50%;background:var(--p400);animation:dotBounce .8s infinite;}
-.claude-dot-anim span:nth-child(2){animation-delay:.15s;}
-.claude-dot-anim span:nth-child(3){animation-delay:.3s;}
-@keyframes dotBounce{0%,80%,100%{transform:scale(.7);opacity:.5;}40%{transform:scale(1);opacity:1;}}
-.claude-section{margin-bottom:14px;}
-.claude-section-title{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;}
-.claude-block{background:var(--p50);border-left:3px solid var(--p400);border-radius:0 10px 10px 0;padding:10px 12px;margin-bottom:8px;font-size:13px;color:var(--p900);line-height:1.6;}
-.claude-block.groen{background:var(--t50);border-color:var(--t400);color:var(--t900);}
-.claude-block.amber{background:var(--a50);border-color:var(--a400);color:var(--a900);}
-.claude-block.coral{background:var(--c50);border-color:var(--c400);color:var(--c900);}
-
-/* TOAST */
-.toast{position:fixed;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 12px);
-  left:50%;transform:translateX(-50%) translateY(20px);
-  background:var(--p900);color:var(--p50);padding:11px 22px;
-  border-radius:100px;font-size:14px;font-weight:500;
-  opacity:0;transition:all .25s ease;z-index:999;pointer-events:none;
-  white-space:nowrap;}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-
-/* LOADING */
-.loading{display:flex;flex-direction:column;align-items:center;
-  justify-content:center;padding:48px 20px;color:var(--muted);}
-.spinner{width:28px;height:28px;border:2.5px solid var(--p100);
-  border-top-color:var(--p600);border-radius:50%;
-  animation:spin .65s linear infinite;margin-bottom:12px;}
-@keyframes spin{to{transform:rotate(360deg);}}
-.empty{text-align:center;padding:48px 20px;color:var(--muted);}
-.empty-icon{font-size:36px;margin-bottom:8px;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px}
+body{display:flex;flex-direction:column}
+#nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:100}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:10px;padding:8px 0;transition:color .2s}
+.nav-btn svg{width:22px;height:22px}
+.nav-btn.active{color:var(--accent)}
+#app{flex:1;overflow-y:auto;padding-bottom:calc(var(--nav-h) + 16px)}
+.screen{display:none;padding:16px;max-width:480px;margin:0 auto}
+.screen.active{display:block}
+h1{font-size:22px;font-weight:700;margin-bottom:4px}
+h2{font-size:17px;font-weight:600;margin-bottom:12px}
+h3{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.subtitle{font-size:13px;color:var(--muted);margin-bottom:20px}
+.card{background:var(--surface);border-radius:var(--radius);padding:16px;margin-bottom:12px;border:1px solid var(--border)}
+.card-row{display:flex;justify-content:space-between;align-items:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 20px;border-radius:var(--radius);border:none;font-size:15px;font-weight:600;cursor:pointer;width:100%;transition:opacity .15s,transform .1s}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-secondary{background:var(--surface2);color:var(--text)}
+.btn-ghost{background:none;border:1px solid var(--border);color:var(--text)}
+.btn-sm{padding:8px 14px;font-size:13px;width:auto;border-radius:8px}
+.btn-danger{background:none;border:1px solid var(--red);color:var(--red)}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.stat-tile{background:var(--surface);border-radius:var(--radius);padding:14px;border:1px solid var(--border)}
+.stat-tile .val{font-size:24px;font-weight:700}
+.stat-tile .lbl{font-size:12px;color:var(--muted);margin-top:2px}
+.schema-card{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:border-color .2s;margin-bottom:10px}
+.schema-card:active{border-color:var(--accent)}
+.schema-card .sc-naam{font-size:17px;font-weight:700}
+.schema-card .sc-info{font-size:13px;color:var(--muted);margin-top:4px}
+.schema-card .sc-last{font-size:12px;color:var(--accent);margin-top:6px}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;margin-top:6px}
+.badge-borst{background:rgba(232,93,38,.2);color:var(--accent)}
+.badge-schouder{background:rgba(59,130,246,.2);color:var(--blue)}
+.badge-combi{background:rgba(139,92,246,.2);color:var(--purple)}
+.badge-rug{background:rgba(34,197,94,.2);color:var(--green)}
+.oef-card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);margin-bottom:10px;overflow:hidden}
+.oef-header{display:flex;align-items:center;padding:14px 16px;gap:12px;cursor:pointer}
+.oef-done-toggle{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.oef-done-toggle.done{background:var(--green);border-color:var(--green)}
+.oef-title-wrap{flex:1}
+.oef-naam{font-size:15px;font-weight:600}
+.oef-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.chevron{color:var(--muted);transition:transform .2s}
+.chevron.open{transform:rotate(180deg)}
+.oef-body{padding:0 16px 14px;display:none}
+.oef-body.open{display:block}
+.oef-uitleg{font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.5}
+.sets-table{width:100%;border-collapse:collapse;margin-bottom:12px}
+.sets-table th{font-size:11px;color:var(--muted);text-align:left;padding:4px 6px;border-bottom:1px solid var(--border)}
+.sets-table td{padding:5px 4px}
+.sets-table input{width:68px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:6px 8px;font-size:14px;text-align:center}
+.sets-table input:focus{outline:none;border-color:var(--accent)}
+.doel-lbl{font-size:11px;color:var(--muted);text-align:center}
+.smiley-row{display:flex;gap:8px;align-items:center;margin-top:10px}
+.smiley-row label{font-size:12px;color:var(--muted);white-space:nowrap}
+.smiley-btn{flex:1;padding:8px 4px;border-radius:10px;border:2px solid var(--border);background:none;cursor:pointer;font-size:20px;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:2px}
+.smiley-btn .sl{font-size:10px;color:var(--muted)}
+.smiley-btn.sel-happy{border-color:var(--green);background:rgba(34,197,94,.15)}
+.smiley-btn.sel-ok{border-color:var(--yellow);background:rgba(245,158,11,.15)}
+.smiley-btn.sel-sad{border-color:var(--red);background:rgba(239,68,68,.15)}
+.overload-banner{background:rgba(245,158,11,.12);border:1px solid var(--yellow);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px;font-size:13px;display:flex;align-items:flex-start;gap:10px}
+.overload-banner .icon{font-size:20px;flex-shrink:0;margin-top:1px}
+.oa{display:flex;gap:8px;margin-top:8px}
+.rit-card{background:var(--surface);border-radius:var(--radius);padding:14px;margin-bottom:10px;border:1px solid var(--border)}
+.rit-datum{font-size:13px;color:var(--muted)}
+.rit-km{font-size:22px;font-weight:700}
+.rit-stats{display:flex;gap:16px;margin-top:8px;flex-wrap:wrap}
+.rit-stat{font-size:13px;color:var(--muted)}
+.rit-stat strong{color:var(--text)}
+.hs-zones{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.hs-zone{font-size:11px;background:var(--surface2);border-radius:6px;padding:3px 8px;color:var(--muted)}
+.hs-zone strong{color:var(--blue)}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+.form-group input,.form-group select,.form-group textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:12px 14px;font-size:15px}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--accent)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.chart-wrap{background:var(--surface);border-radius:var(--radius);padding:16px;margin-bottom:16px;border:1px solid var(--border)}
+.chart-wrap canvas{max-height:200px}
+#toast{position:fixed;bottom:calc(var(--nav-h)+16px);left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface2);color:var(--text);padding:10px 20px;border-radius:20px;font-size:14px;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;z-index:200;border:1px solid var(--border)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-row{display:flex;justify-content:center;padding:32px;color:var(--muted);gap:10px;align-items:center}
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.focus-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.focus-tab{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:none;color:var(--muted);font-size:13px;cursor:pointer;transition:all .2s}
+.focus-tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.pr-item{background:var(--surface);border-radius:var(--radius);padding:12px 14px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.pr-naam{font-size:14px;font-weight:600}
+.pr-val{font-size:18px;font-weight:700;color:var(--yellow)}
+.pr-datum{font-size:12px;color:var(--muted)}
+.add-oef-panel{background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);padding:14px;margin-bottom:12px}
+.oef-pick-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.oef-pick-row select{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 10px;font-size:14px}
+.error-banner{background:rgba(239,68,68,.1);border:1px solid var(--red);border-radius:var(--radius);padding:12px;font-size:13px;color:var(--red);margin-bottom:12px}
 </style>
 </head>
 <body>
+<div id="app">
 
-<!-- TOP BAR -->
-<div class="topbar">
-  <div class="topbar-title">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
-    Sport-Tracker
-  </div>
-  <div class="topbar-sub" id="topbar-sub">15 ritten</div>
-  <div id="cache-clean-btn" onclick="cacheSchoonmaken()" title="Cache wissen & verversen" style="margin-left:10px;padding:4px 6px;cursor:pointer;opacity:.7;">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EEEDFE" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
-  </div>
-</div>
-
-<!-- PAGES -->
-<div class="page active" id="page-dashboard"></div>
-<div class="page" id="page-invoer"></div>
-<div class="page" id="page-overzicht"></div>
-<div class="page" id="page-analyse"></div>
-<div class="page" id="page-omstandigheden"></div>
-
-<!-- BOTTOM NAV -->
-<nav class="bottom-nav">
-  <div class="nav-item active" data-page="dashboard">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-    <div class="nav-dot"></div>
-    Dashboard
-  </div>
-  <div class="nav-item" data-page="invoer">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
-    <div class="nav-dot"></div>
-    Rit toevoegen
-  </div>
-  <div class="nav-item" data-page="overzicht">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-    <div class="nav-dot"></div>
-    Overzicht
-  </div>
-  <div class="nav-item" data-page="analyse">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-    <div class="nav-dot"></div>
-    Analyse
-  </div>
-</nav>
-
-<div class="toast" id="toast"></div>
-
-<!-- Claude analyse modal -->
-<div id="claude-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(38,33,92,.45);backdrop-filter:blur(4px);padding:20px;align-items:flex-end;">
-  <div style="background:var(--white);border-radius:20px 20px 0 0;width:100%;max-height:80vh;overflow-y:auto;padding:20px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <div style="width:28px;height:28px;background:var(--p600);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;">🤖</div>
-        <span style="font-size:15px;font-weight:600;color:var(--p900);">Claude analyse</span>
+  <!-- HOME -->
+  <div id="screen-home" class="screen active">
+    <div style="padding-top:16px">
+      <div style="font-size:28px;font-weight:800;margin-bottom:4px" id="greeting">Hoi 👋</div>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:24px" id="home-sub">Laden...</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
+        <button class="btn btn-primary" onclick="showScreen('gym');startGymFlow()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M6 4v16M18 4v16M6 12h12M2 7h4M18 7h4M2 17h4M18 17h4"/></svg>
+          Gym sessie starten
+        </button>
+        <button class="btn btn-secondary" onclick="showScreen('ritten');openAddRit()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          Cardio loggen
+        </button>
       </div>
-      <button onclick="sluitModal()" style="background:var(--bg);border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:18px;color:var(--muted);">×</button>
+      <h3>Recente gym-sessies</h3>
+      <div id="home-gym-list"><div class="loading-row"><div class="spinner"></div></div></div>
+      <h3 style="margin-top:16px">Recente ritten</h3>
+      <div id="home-rit-list"><div class="loading-row"><div class="spinner"></div></div></div>
     </div>
-    <div id="claude-rit-info" style="background:var(--p50);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:13px;color:var(--p800);"></div>
-    <div id="claude-output" style="font-size:14px;line-height:1.7;color:var(--text);min-height:80px;"></div>
+  </div>
+
+  <!-- GYM -->
+  <div id="screen-gym" class="screen">
+    <div id="gym-picker">
+      <div style="padding-top:16px">
+        <h1>Gym</h1>
+        <p class="subtitle">Kies je sessie</p>
+        <div id="schema-list"><div class="loading-row"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+    <div id="gym-sessie" style="display:none">
+      <div style="padding-top:16px">
+        <div class="card-row" style="margin-bottom:16px">
+          <div><h1 id="sessie-titel">Borst</h1><div class="subtitle" id="sessie-datum" style="margin-bottom:0"></div></div>
+          <button class="btn btn-sm btn-ghost" onclick="cancelSessie()">✕ Annuleren</button>
+        </div>
+        <div id="overload-banners"></div>
+        <div id="oef-list"></div>
+        <div style="margin-bottom:12px">
+          <button class="btn btn-ghost" onclick="toggleAddOef()">+ Extra oefening toevoegen</button>
+        </div>
+        <div class="add-oef-panel" id="add-oef-panel" style="display:none">
+          <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--muted)">OEFENING TOEVOEGEN</div>
+          <div class="oef-pick-row">
+            <select id="add-oef-select"></select>
+            <button class="btn btn-sm btn-primary" onclick="addExtraOef()">Toevoegen</button>
+          </div>
+        </div>
+        <div class="card" style="margin-top:4px">
+          <h3>Sessie gevoel</h3>
+          <div class="smiley-row" style="margin-top:8px">
+            <button class="smiley-btn" id="ss-happy" onclick="setSessieGevoel('happy')">😄<span class="sl">Top</span></button>
+            <button class="smiley-btn" id="ss-ok" onclick="setSessieGevoel('ok')">😐<span class="sl">Normaal</span></button>
+            <button class="smiley-btn" id="ss-sad" onclick="setSessieGevoel('sad')">😞<span class="sl">Zwaar</span></button>
+          </div>
+          <div class="form-group" style="margin-top:14px;margin-bottom:0">
+            <label>Notities (optioneel)</label>
+            <textarea id="sessie-notities" rows="2" placeholder="Bijzonderheden..."></textarea>
+          </div>
+        </div>
+        <button class="btn btn-primary" style="margin-top:8px" id="save-sessie-btn" onclick="saveSessie()">💾 Sessie opslaan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCHEMA'S -->
+  <div id="screen-schemas" class="screen">
+    <div style="padding-top:16px">
+      <h1>Schema's</h1>
+      <p class="subtitle">Jouw oefeningen per focusgebied</p>
+      <div class="focus-tabs" id="focus-tabs"></div>
+      <div id="schema-detail"><div class="loading-row"><div class="spinner"></div></div></div>
+    </div>
+  </div>
+
+  <!-- RITTEN -->
+  <div id="screen-ritten" class="screen">
+    <div style="padding-top:16px">
+      <div class="section-header">
+        <div><h1>Cardio</h1><p class="subtitle" style="margin-bottom:0" id="ritten-sub">Laden...</p></div>
+        <button class="btn btn-sm btn-primary" onclick="openAddRit()">+ Toevoegen</button>
+      </div>
+      <div id="add-rit-form" class="card" style="display:none">
+        <h2>Nieuwe rit</h2>
+        <div class="form-row">
+          <div class="form-group"><label>Datum</label><input type="date" id="rit-datum"></div>
+          <div class="form-group"><label>Afstand (km)</label><input type="number" id="rit-km" step="0.1" placeholder="15.5"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Tijd (min)</label><input type="number" id="rit-tijd" placeholder="30"></div>
+          <div class="form-group"><label>Weerstand</label><input type="number" id="rit-weerstand" placeholder="10"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Type</label>
+            <select id="rit-type"><option value="steady-state">Steady state</option><option value="interval">Interval</option><option value="herstel">Herstel</option></select>
+          </div>
+          <div class="form-group"><label>RPE (1–10)</label><input type="number" id="rit-rpe" min="1" max="10" placeholder="3"></div>
+        </div>
+        <div class="form-group"><label>Herstel (sec)</label><input type="number" id="rit-herstel" placeholder="90"></div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Hartslag zones (optioneel)</div>
+        <div class="form-row3">
+          <div class="form-group"><label>0–10 min</label><input type="text" id="rit-hs0" placeholder="&lt; 140"></div>
+          <div class="form-group"><label>10–20 min</label><input type="text" id="rit-hs1" placeholder="140–145"></div>
+          <div class="form-group"><label>20–30 min</label><input type="text" id="rit-hs2" placeholder="140–146"></div>
+        </div>
+        <div class="form-group"><label>Notities</label><textarea id="rit-notities" rows="2"></textarea></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-secondary" style="flex:1" onclick="closeAddRit()">Annuleren</button>
+          <button class="btn btn-primary" style="flex:1" id="save-rit-btn" onclick="saveRit()">Opslaan</button>
+        </div>
+      </div>
+      <div class="stats-grid" id="ritten-stats"></div>
+      <div class="chart-wrap" id="chart-wrap" style="display:none"><h3>Afstand per rit (km)</h3><canvas id="ritten-chart"></canvas></div>
+      <div class="chart-wrap" id="herstel-chart-wrap" style="display:none"><h3>Hersteltijd (sec) — lager = beter</h3><canvas id="herstel-chart"></canvas></div>
+      <div id="ritten-list"><div class="loading-row"><div class="spinner"></div></div></div>
+    </div>
+  </div>
+
+  <!-- VOORTGANG -->
+  <div id="screen-voortgang" class="screen">
+    <div style="padding-top:16px">
+      <h1>Voortgang</h1>
+      <p class="subtitle">Gewicht & progressive overload</p>
+      <div class="form-group"><label>Oefening</label>
+        <select id="voortgang-sel" onchange="renderVoortgang()"></select>
+      </div>
+      <div class="chart-wrap"><h3>Piekgewicht per sessie (kg)</h3><canvas id="voortgang-chart"></canvas></div>
+      <h3>PR's</h3>
+      <div id="pr-list" style="margin-bottom:20px"></div>
+      <h3>Sessie-geschiedenis</h3>
+      <div id="sessie-hist"></div>
+    </div>
   </div>
 </div>
+
+<nav id="nav">
+  <button class="nav-btn active" data-s="home" onclick="showScreen('home')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>Home
+  </button>
+  <button class="nav-btn" data-s="gym" onclick="showScreen('gym')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4v16M18 4v16M6 12h12M2 7h4M18 7h4M2 17h4M18 17h4"/></svg>Gym
+  </button>
+  <button class="nav-btn" data-s="schemas" onclick="showScreen('schemas')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>Schema's
+  </button>
+  <button class="nav-btn" data-s="ritten" onclick="showScreen('ritten')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Ritten
+  </button>
+  <button class="nav-btn" data-s="voortgang" onclick="showScreen('voortgang')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Voortgang
+  </button>
+</nav>
+<div id="toast"></div>
 
 <script>
-const SUPA_URL='https://wvtvcfmdkyzuptnuawuy.supabase.co';
-const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind2dHZjZm1ka3l6dXB0bnVhd3V5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2ODQ1MzMsImV4cCI6MjA5NjI2MDUzM30.CjeDeMdy7n3V2w-vy7G3PnEY2nzwTEWZ4fGxfiiI-w0';
-const H={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'};
+// ── SUPABASE ───────────────────────────────────────────
+const SB_URL = 'https://wvtvcfmdkyzuptnuawuy.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind2dHZjZm1ka3l6dXB0bnVhd3V5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2ODQ1MzMsImV4cCI6MjA5NjI2MDUzM30.CjeDeMdy7n3V2w-vy7G3PnEY2nzwTEWZ4fGxfiiI-w0';
+const sb = supabase.createClient(SB_URL, SB_KEY);
 
-let ritten=[], activeTags=new Set(), editId=null, activeFilter='all';
+// ── STATE ──────────────────────────────────────────────
+let SCHEMAS = [];
+let sessieState = null;
+let sessieGevoel = null;
+let currentSchemaFocus = null;
+let rittenData = [];
+let sessiesData = [];
+let gymSetsData = {};
+let addOefOpen = false;
+let rittenChart = null;
+let herstelChart = null;
+let voortgangChart = null;
 
-// ── OMSTANDIGHEDEN BEHEER (lokaal opgeslagen, per toestel) ─────────
-const OMSTANDIGHEDEN_KEY='sporttracker_omstandigheden';
-const OMSTANDIGHEDEN_DEFAULT=[
-  {tag:'goed_geslapen',label:'Goed geslapen',cls:'goed'},
-  {tag:'slecht_geslapen',label:'Slecht geslapen',cls:'slecht'},
-  {tag:'warm',label:'Warm',cls:'warm'},
-  {tag:'vermoeid',label:'Vermoeid',cls:'moe'},
-  {tag:'hoofdpijn',label:'Hoofdpijn',cls:'hoofd'},
+const ALLE_OEFENINGEN = [
+  {key:'bankdrukken',naam:'Bankdrukken',spiergroep:'borst',reps_min:8,reps_max:12,gewicht_start:65,gewicht_stap:5,uitleg:'Plat op de bank, barbell zakken naar borst en omhoog drukken.'},
+  {key:'incline',naam:'Incline Dumbbell Press',spiergroep:'borst',reps_min:10,reps_max:15,gewicht_start:22.5,gewicht_stap:2.5,uitleg:'Bank op 30–45°, dumbbells buitenwaarts zakken.'},
+  {key:'cablefly',naam:'Cable Fly',spiergroep:'borst',reps_min:12,reps_max:15,gewicht_start:15,gewicht_stap:2.5,uitleg:'Kabels hoog, armen samenvoegen voor de borst.'},
+  {key:'triceps',naam:'Triceps Pushdown',spiergroep:'triceps',reps_min:12,reps_max:15,gewicht_start:22.5,gewicht_stap:2.5,uitleg:'Kabel op kophoogte, stang omlaag drukken.'},
+  {key:'overhead',naam:'Overhead Press',spiergroep:'schouder',reps_min:8,reps_max:12,gewicht_start:40,gewicht_stap:2.5,uitleg:'Dumbbells boven het hoofd drukken.'},
+  {key:'lateral',naam:'Lateral Raise',spiergroep:'schouder',reps_min:12,reps_max:15,gewicht_start:10,gewicht_stap:2.5,uitleg:'Dumbbells zijwaarts opheffen tot schouderhoogte.'},
+  {key:'frontraise',naam:'Front Raise',spiergroep:'schouder',reps_min:12,reps_max:15,gewicht_start:8,gewicht_stap:2.5,uitleg:'Dumbbells naar voren heffen tot schouderhoogte.'},
+  {key:'pulldown',naam:'Lat Pulldown',spiergroep:'rug',reps_min:10,reps_max:12,gewicht_start:50,gewicht_stap:5,uitleg:'Stang naar borst trekken, schouderbladen samenknijpen.'},
+  {key:'seated-row',naam:'Seated Cable Row',spiergroep:'rug',reps_min:10,reps_max:12,gewicht_start:45,gewicht_stap:5,uitleg:'Kabel naar buik trekken, romp stabiel houden.'},
+  {key:'facepull',naam:'Face Pull',spiergroep:'schouder',reps_min:15,reps_max:20,gewicht_start:15,gewicht_stap:2.5,uitleg:'Kabel hoog, naar gezicht trekken, ellebogen hoog.'},
+  {key:'dips',naam:'Dips',spiergroep:'triceps/borst',reps_min:8,reps_max:12,gewicht_start:0,gewicht_stap:5,uitleg:'Eigen gewicht, romp iets voorover voor borst of rechtop voor triceps.'},
+  {key:'curls',naam:'Bicep Curl',spiergroep:'biceps',reps_min:10,reps_max:15,gewicht_start:12,gewicht_stap:2,uitleg:'Dumbbells naar schouder krullen, ellebogen vast langs het lijf.'},
 ];
-const TAG_KLEUREN=['goed','warm','moe','hoofd','slecht'];
 
-function getOmstandigheden(){
-  try{
-    const raw=localStorage.getItem(OMSTANDIGHEDEN_KEY);
-    if(raw) return JSON.parse(raw);
-  }catch(e){}
-  setOmstandigheden(OMSTANDIGHEDEN_DEFAULT);
-  return OMSTANDIGHEDEN_DEFAULT;
+// ── UTILS ──────────────────────────────────────────────
+function toast(msg, dur=2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
 }
-function setOmstandigheden(lijst){
-  try{localStorage.setItem(OMSTANDIGHEDEN_KEY,JSON.stringify(lijst));}catch(e){}
+function gevoelEmoji(g) { return g==='happy'?'😄':g==='sad'?'😞':'😐'; }
+function fmtDatum(d) {
+  if (!d) return '';
+  return new Date(d+'T00:00:00').toLocaleDateString('nl-NL',{day:'numeric',month:'short',year:'numeric'});
+}
+function dagGeleden(d) {
+  if (!d) return null;
+  return Math.floor((new Date()-new Date(d+'T00:00:00'))/86400000);
+}
+function pyramidWeights(start, stap, n) {
+  if (n===1) return [start];
+  if (n===2) return [start, start+stap];
+  if (n===3) return [start, start+stap, start];
+  if (n===4) return [start, start+stap, start+stap*2, start+stap];
+  return [start, start+stap, start+stap*2, start+stap, start];
+}
+function setBtnLoading(id, loading) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  btn.disabled = loading;
+  if (loading) { btn._orig = btn.innerHTML; btn.innerHTML = '<div class="spinner" style="border-top-color:#fff"></div>'; }
+  else btn.innerHTML = btn._orig || btn.innerHTML;
 }
 
-function renderOmstandighedenTags(){
-  const wrap=document.getElementById('tags-wrap');
-  if(!wrap) return;
-  const lijst=getOmstandigheden();
-  wrap.innerHTML=lijst.map(o=>`<div class="tag ${activeTags.has(o.tag)?'active-'+o.cls:''}" data-tag="${o.tag}" data-cls="${o.cls}">${o.label}</div>`).join('');
-  wrap.querySelectorAll('.tag').forEach(t=>{
-    t.addEventListener('click',()=>{
-      const tag=t.dataset.tag,cls=t.dataset.cls;
-      if(activeTags.has(tag)){activeTags.delete(tag);t.className='tag';}
-      else{activeTags.add(tag);t.className='tag active-'+cls;}
-    });
-  });
+// ── NAV ────────────────────────────────────────────────
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.s === name));
+  document.getElementById('screen-' + name).classList.add('active');
+  if (name === 'ritten') loadRitten();
+  if (name === 'schemas') loadSchemas();
+  if (name === 'voortgang') loadVoortgang();
+  if (name === 'home') loadHome();
 }
 
-function renderOmstandighedenBeheer(){
-  const el=document.getElementById('page-omstandigheden');
-  const lijst=getOmstandigheden();
-  el.innerHTML=`
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
-      <span onclick="navigate('invoer')" style="cursor:pointer;color:var(--p600);font-size:20px;">←</span>
-      <span style="font-size:17px;font-weight:600;">Omstandigheden beheren</span>
-    </div>
-    <div class="card">
-      <div class="card-title">Huidige opties</div>
-      <div id="omst-lijst"></div>
-    </div>
-    <div class="card">
-      <div class="card-title">Nieuwe optie toevoegen</div>
-      <div class="form-group"><label>Naam</label><input type="text" id="nieuw-omst-naam" placeholder="Bijv. Geblesseerd, Net gegeten..."></div>
-      <div class="form-group"><label>Kleur</label>
-        <select id="nieuw-omst-kleur">
-          <option value="goed">Groen (positief)</option>
-          <option value="warm">Oranje/rood (fysiek)</option>
-          <option value="moe">Amber (vermoeidheid)</option>
-          <option value="hoofd">Paars (overig)</option>
-          <option value="slecht">Grijs (negatief)</option>
-        </select>
+// ── HOME ───────────────────────────────────────────────
+async function loadHome() {
+  const h = new Date().getHours();
+  document.getElementById('greeting').textContent = h<12?'Goedemorgen 🌤️':h<18?'Hoi 👋':'Goedeavond 🌙';
+
+  const [{ data: sessies }, { data: ritten }] = await Promise.all([
+    sb.from('gym_sessies').select('*').order('datum',{ascending:false}).limit(3),
+    sb.from('fiets_ritten').select('*').order('datum',{ascending:false}).limit(3),
+  ]);
+
+  const totalSessies = sessies?.length || 0;
+  document.getElementById('home-sub').textContent = `${totalSessies} recente gym-sessies · ${ritten?.length||0} recente ritten`;
+
+  const badgeMap = {'Borst':'badge-borst','Schouder':'badge-schouder','Borst + Schouder':'badge-combi','Rug':'badge-rug'};
+  document.getElementById('home-gym-list').innerHTML = (sessies||[]).map(s => `
+    <div class="card" style="padding:12px 14px;margin-bottom:8px">
+      <div class="card-row">
+        <div>
+          <div style="font-weight:600">${s.schema_naam}</div>
+          <div style="font-size:12px;color:var(--muted)">${fmtDatum(s.datum)}</div>
+        </div>
+        <div style="font-size:22px">${gevoelEmoji(s.gevoel)}</div>
       </div>
-      <button class="btn btn-primary" onclick="voegOmstandigheidToe()">Toevoegen</button>
-    </div>`;
-  renderOmstandighedenLijst();
+    </div>`).join('') || '<div style="color:var(--muted);font-size:13px;padding:8px 0">Nog geen sessies</div>';
+
+  document.getElementById('home-rit-list').innerHTML = (ritten||[]).map(r => `
+    <div class="rit-card">
+      <div class="card-row">
+        <div>
+          <div class="rit-datum">${fmtDatum(r.datum)} · ${r.type_rit||'steady-state'}</div>
+          <div class="rit-km">${r.afstand_km} km</div>
+          <div class="rit-stats">
+            ${r.tijd_min?`<div class="rit-stat"><strong>${r.tijd_min}</strong> min</div>`:''}
+            ${r.weerstand?`<div class="rit-stat">W<strong>${r.weerstand}</strong></div>`:''}
+            ${r.herstel_sec?`<div class="rit-stat">Herstel <strong>${r.herstel_sec}</strong>s</div>`:''}
+          </div>
+        </div>
+        <div style="font-size:22px">${gevoelEmoji(r.rpe===1?'happy':r.rpe>=3?'sad':'ok')}</div>
+      </div>
+    </div>`).join('') || '<div style="color:var(--muted);font-size:13px;padding:8px 0">Nog geen ritten</div>';
 }
 
-function renderOmstandighedenLijst(){
-  const lijst=getOmstandigheden();
-  const wrap=document.getElementById('omst-lijst');
-  if(!lijst.length){wrap.innerHTML='<div class="empty" style="padding:20px;">Geen opties meer — voeg er een toe.</div>';return;}
-  wrap.innerHTML=lijst.map((o,i)=>`
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
-      <span class="tag active-${o.cls}" style="cursor:default;">${o.label}</span>
-      <button onclick="verwijderOmstandigheid(${i})" style="background:none;border:none;color:var(--c600);font-size:13px;font-family:var(--font);cursor:pointer;padding:6px 10px;">Verwijderen</button>
+// ── GYM PICKER ────────────────────────────────────────
+async function startGymFlow() {
+  document.getElementById('gym-picker').style.display = 'block';
+  document.getElementById('gym-sessie').style.display = 'none';
+  document.getElementById('schema-list').innerHTML = '<div class="loading-row"><div class="spinner"></div></div>';
+
+  const [{ data: schemas }, { data: sessies }] = await Promise.all([
+    sb.from('gym_schemas').select('*').order('naam').order('volgorde'),
+    sb.from('gym_sessies').select('datum,schema_naam').order('datum',{ascending:false}),
+  ]);
+
+  SCHEMAS = schemas || [];
+  const namen = [...new Set(SCHEMAS.map(s => s.naam))];
+  const lastMap = {};
+  (sessies||[]).forEach(s => { if (!lastMap[s.schema_naam]) lastMap[s.schema_naam] = s.datum; });
+
+  const badgeMap = {'Borst':'badge-borst','Schouder':'badge-schouder','Borst + Schouder':'badge-combi','Rug':'badge-rug'};
+  document.getElementById('schema-list').innerHTML = namen.map(naam => {
+    const oefs = SCHEMAS.filter(s => s.naam === naam);
+    const last = lastMap[naam];
+    const dag = last ? dagGeleden(last) : null;
+    const bc = badgeMap[naam] || 'badge-combi';
+    return `<div class="schema-card" onclick="beginSessie('${naam}')">
+      <div class="card-row">
+        <div class="sc-naam">${naam}</div>
+        <span class="badge ${bc}">${naam}</span>
+      </div>
+      <div class="sc-info">${oefs.length} oefeningen · ${oefs.map(o=>o.oefening_naam).join(', ')}</div>
+      ${dag!==null
+        ? `<div class="sc-last">Laatste: ${dag===0?'vandaag':dag===1?'gisteren':dag+'d geleden'}</div>`
+        : `<div class="sc-last" style="color:var(--muted)">Nog niet gedaan</div>`}
+    </div>`;
+  }).join('');
+}
+
+// ── SESSIE ─────────────────────────────────────────────
+async function beginSessie(naam) {
+  document.getElementById('gym-picker').style.display = 'none';
+  document.getElementById('gym-sessie').style.display = 'block';
+  document.getElementById('sessie-titel').textContent = naam;
+  document.getElementById('sessie-datum').textContent = fmtDatum(new Date().toISOString().split('T')[0]);
+  document.getElementById('sessie-notities').value = '';
+  sessieGevoel = null;
+  addOefOpen = false;
+  ['happy','ok','sad'].forEach(f => document.getElementById('ss-'+f).className='smiley-btn');
+
+  const oefs = SCHEMAS.filter(s => s.naam === naam);
+
+  // Check overload: haal laatste 2 sessies op voor dit schema
+  const { data: lastSessies } = await sb.from('gym_sessies')
+    .select('id').eq('schema_naam', naam).order('datum',{ascending:false}).limit(2);
+  const lastIds = (lastSessies||[]).map(s=>s.id);
+  let overloadKeys = new Set();
+  if (lastIds.length >= 2) {
+    const { data: sets } = await sb.from('gym_sets')
+      .select('oefening_key,reps,reps_gepland_max,sessie_id')
+      .in('sessie_id', lastIds);
+    // Per oefening: check of in beide sessies alle sets >= reps_max
+    const perOef = {};
+    (sets||[]).forEach(s => {
+      if (!perOef[s.oefening_key]) perOef[s.oefening_key] = {};
+      if (!perOef[s.oefening_key][s.sessie_id]) perOef[s.oefening_key][s.sessie_id] = [];
+      perOef[s.oefening_key][s.sessie_id].push(s);
+    });
+    Object.entries(perOef).forEach(([key, bySessie]) => {
+      const sessieIds = Object.keys(bySessie);
+      if (sessieIds.length >= 2) {
+        const allMax = sessieIds.every(sid =>
+          bySessie[sid].every(s => s.reps !== null && s.reps >= (s.reps_gepland_max||99))
+        );
+        if (allMax) overloadKeys.add(key);
+      }
+    });
+  }
+
+  const bannerEl = document.getElementById('overload-banners');
+  bannerEl.innerHTML = [...overloadKeys].map(key => {
+    const oef = oefs.find(o => o.oefening_key === key);
+    if (!oef) return '';
+    const nieuw = (parseFloat(oef.gewicht_start) + parseFloat(oef.gewicht_stap)).toFixed(1);
+    return `<div class="overload-banner" id="banner-${key}">
+      <div class="icon">📈</div>
+      <div>
+        <strong>${oef.oefening_naam}</strong>: 2× bovenkant gehaald!<br>
+        <span style="color:var(--muted);font-size:12px">Voorstel: startgewicht ${oef.gewicht_start}kg → <strong>${nieuw}kg</strong></span>
+        <div class="oa">
+          <button class="btn btn-sm btn-primary" onclick="acceptOverload(${oef.id},'${key}',${oef.gewicht_start},${nieuw})">✓ Accepteren</button>
+          <button class="btn btn-sm btn-ghost" onclick="document.getElementById('banner-${key}').remove()">Nu niet</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  sessieState = { naam, oefs: [...oefs], oefData: {} };
+  oefs.forEach(oef => {
+    const start = parseFloat(oef.gewicht_start) || 20;
+    const stap = parseFloat(oef.gewicht_stap) || 2.5;
+    sessieState.oefData[oef.oefening_key] = {
+      open: false, done: false, gevoel: null, extra: false,
+      sets: pyramidWeights(start, stap, oef.sets_aantal||3).map(g => ({gewicht:g, reps:null}))
+    };
+  });
+
+  const sel = document.getElementById('add-oef-select');
+  const huidigeKeys = new Set(oefs.map(o => o.oefening_key));
+  sel.innerHTML = ALLE_OEFENINGEN.filter(o => !huidigeKeys.has(o.key))
+    .map(o => `<option value="${o.key}">${o.naam} (${o.spiergroep})</option>`).join('');
+
+  document.getElementById('add-oef-panel').style.display = 'none';
+  renderSessie();
+}
+
+function toggleAddOef() {
+  addOefOpen = !addOefOpen;
+  document.getElementById('add-oef-panel').style.display = addOefOpen ? 'block' : 'none';
+}
+
+function addExtraOef() {
+  const key = document.getElementById('add-oef-select').value;
+  if (!key || sessieState.oefData[key]) { toast('Al toegevoegd'); return; }
+  const oef = ALLE_OEFENINGEN.find(o => o.key === key);
+  if (!oef) return;
+  const extraOef = { id:Date.now(), naam:sessieState.naam, oefening_key:oef.key, oefening_naam:oef.naam,
+    spiergroep:oef.spiergroep, sets_aantal:3, reps_min:oef.reps_min, reps_max:oef.reps_max,
+    gewicht_start:oef.gewicht_start, gewicht_stap:oef.gewicht_stap, volgorde:99, uitleg:oef.uitleg };
+  sessieState.oefs.push(extraOef);
+  sessieState.oefData[oef.key] = { open:true, done:false, gevoel:null, extra:true,
+    sets: pyramidWeights(oef.gewicht_start, oef.gewicht_stap, 3).map(g => ({gewicht:g, reps:null})) };
+  const sel = document.getElementById('add-oef-select');
+  Array.from(sel.options).forEach(opt => { if (opt.value === key) opt.remove(); });
+  addOefOpen = false;
+  document.getElementById('add-oef-panel').style.display = 'none';
+  renderSessie();
+  toast(`✓ ${oef.naam} toegevoegd`);
+}
+
+function renderSessie() {
+  if (!sessieState) return;
+  document.getElementById('oef-list').innerHTML = sessieState.oefs.map(oef => {
+    const st = sessieState.oefData[oef.oefening_key];
+    if (!st) return '';
+    const doneClass = st.done===true?'done':'';
+    const checkmark = st.done===true?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':'';
+    const setsRows = st.sets.map((s,i) => `
+      <tr>
+        <td style="color:var(--muted);font-size:13px;padding:6px 8px">Set ${i+1}</td>
+        <td><input type="number" value="${s.gewicht}" step="0.5" min="0" onchange="setGewicht('${oef.oefening_key}',${i},this.value)"></td>
+        <td><input type="number" value="${s.reps!==null?s.reps:''}" min="0" max="30" placeholder="—" onchange="setReps('${oef.oefening_key}',${i},this.value)"></td>
+        <td class="doel-lbl">${oef.reps_min}–${oef.reps_max}</td>
+      </tr>`).join('');
+    const extraTag = st.extra ? `<span style="font-size:10px;background:rgba(139,92,246,.2);color:var(--purple);padding:2px 6px;border-radius:10px;margin-left:6px">extra</span>` : '';
+    const verwijderBtn = st.extra
+      ? `<button class="btn btn-sm btn-danger" style="margin-top:10px" onclick="removeExtraOef('${oef.oefening_key}')">Verwijderen</button>`
+      : `<button class="btn btn-sm btn-ghost" style="margin-top:10px;color:var(--muted)" onclick="skipOef('${oef.oefening_key}')">Overslaan</button>`;
+    return `<div class="oef-card" id="oef-card-${oef.oefening_key}">
+      <div class="oef-header" onclick="toggleOef('${oef.oefening_key}')">
+        <button class="oef-done-toggle ${doneClass}" onclick="event.stopPropagation();toggleDone('${oef.oefening_key}')">${checkmark}</button>
+        <div class="oef-title-wrap">
+          <div class="oef-naam" style="${st.done?'text-decoration:line-through;color:var(--muted)':''}">${oef.oefening_naam}${extraTag}</div>
+          <div class="oef-sub">${oef.sets_aantal||3} sets · ${oef.reps_min}–${oef.reps_max} reps · start ${st.sets[0].gewicht}kg</div>
+        </div>
+        <svg class="chevron ${st.open?'open':''}" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="oef-body ${st.open?'open':''}">
+        <div class="oef-uitleg">${oef.uitleg||''}</div>
+        <table class="sets-table">
+          <thead><tr><th>Set</th><th>Gewicht (kg)</th><th>Reps</th><th>Doel</th></tr></thead>
+          <tbody>${setsRows}</tbody>
+        </table>
+        <div class="smiley-row">
+          <label>Gevoel:</label>
+          <button class="smiley-btn ${st.gevoel==='happy'?'sel-happy':''}" onclick="setOefGevoel('${oef.oefening_key}','happy')">😄</button>
+          <button class="smiley-btn ${st.gevoel==='ok'?'sel-ok':''}" onclick="setOefGevoel('${oef.oefening_key}','ok')">😐</button>
+          <button class="smiley-btn ${st.gevoel==='sad'?'sel-sad':''}" onclick="setOefGevoel('${oef.oefening_key}','sad')">😞</button>
+        </div>
+        ${verwijderBtn}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleOef(key) { sessieState.oefData[key].open=!sessieState.oefData[key].open; renderSessie(); }
+function toggleDone(key) { sessieState.oefData[key].done=sessieState.oefData[key].done===true?false:true; renderSessie(); }
+function skipOef(key) { sessieState.oefData[key].done='skip'; sessieState.oefData[key].open=false; renderSessie(); }
+function removeExtraOef(key) {
+  sessieState.oefs = sessieState.oefs.filter(o => o.oefening_key !== key);
+  delete sessieState.oefData[key];
+  const oef = ALLE_OEFENINGEN.find(o => o.key === key);
+  if (oef) {
+    const sel = document.getElementById('add-oef-select');
+    const opt = document.createElement('option');
+    opt.value = oef.key; opt.textContent = `${oef.naam} (${oef.spiergroep})`;
+    sel.appendChild(opt);
+  }
+  renderSessie(); toast('Oefening verwijderd');
+}
+function setGewicht(key,i,v) { sessieState.oefData[key].sets[i].gewicht=parseFloat(v); }
+function setReps(key,i,v) { sessieState.oefData[key].sets[i].reps=parseInt(v); }
+function setOefGevoel(key,g) { sessieState.oefData[key].gevoel=g; renderSessie(); }
+function setSessieGevoel(g) {
+  sessieGevoel=g;
+  ['happy','ok','sad'].forEach(f => document.getElementById('ss-'+f).className='smiley-btn'+(f===g?' sel-'+f:''));
+}
+async function acceptOverload(id, key, oud, nieuw) {
+  await sb.from('gym_schemas').update({gewicht_start:nieuw}).eq('id',id);
+  const idx = SCHEMAS.findIndex(s => s.id===id);
+  if (idx>=0) SCHEMAS[idx].gewicht_start = nieuw;
+  if (sessieState?.oefData[key]) {
+    const oef = sessieState.oefs.find(o=>o.oefening_key===key);
+    sessieState.oefData[key].sets = pyramidWeights(nieuw, oef.gewicht_stap, oef.sets_aantal).map(g=>({gewicht:g,reps:null}));
+  }
+  document.getElementById('banner-'+key)?.remove();
+  renderSessie(); toast('✓ Gewicht verhoogd naar '+nieuw+'kg');
+}
+
+async function saveSessie() {
+  setBtnLoading('save-sessie-btn', true);
+  try {
+    const { data: sessie, error } = await sb.from('gym_sessies').insert({
+      datum: new Date().toISOString().split('T')[0],
+      schema_naam: sessieState.naam,
+      gevoel: sessieGevoel,
+      notities: document.getElementById('sessie-notities').value || null,
+    }).select().single();
+    if (error) throw error;
+
+    const sets = [];
+    sessieState.oefs.forEach(oef => {
+      const st = sessieState.oefData[oef.oefening_key];
+      if (!st || st.done === 'skip') return;
+      st.sets.forEach((s, i) => {
+        sets.push({
+          sessie_id: sessie.id,
+          oefening_key: oef.oefening_key,
+          set_nummer: i+1,
+          gewicht: s.gewicht || null,
+          reps: s.reps || null,
+          reps_gepland_min: oef.reps_min,
+          reps_gepland_max: oef.reps_max,
+          gevoel: st.gevoel,
+          overload_bereikt: s.reps !== null && s.reps >= oef.reps_max,
+        });
+      });
+    });
+
+    if (sets.length > 0) {
+      const { error: setsErr } = await sb.from('gym_sets').insert(sets);
+      if (setsErr) throw setsErr;
+    }
+
+    toast('✓ Sessie opgeslagen!');
+    sessieState = null;
+    showScreen('home');
+  } catch(e) {
+    toast('Fout: ' + e.message, 4000);
+    setBtnLoading('save-sessie-btn', false);
+  }
+}
+
+function cancelSessie() {
+  if (!confirm('Sessie annuleren?')) return;
+  sessieState = null;
+  document.getElementById('gym-picker').style.display = 'block';
+  document.getElementById('gym-sessie').style.display = 'none';
+}
+
+// ── SCHEMA'S ──────────────────────────────────────────
+async function loadSchemas() {
+  if (SCHEMAS.length === 0) {
+    const { data } = await sb.from('gym_schemas').select('*').order('naam').order('volgorde');
+    SCHEMAS = data || [];
+  }
+  const namen = [...new Set(SCHEMAS.map(s=>s.naam))];
+  if (!currentSchemaFocus) currentSchemaFocus = namen[0];
+  document.getElementById('focus-tabs').innerHTML = namen.map(n =>
+    `<button class="focus-tab ${n===currentSchemaFocus?'active':''}" onclick="setFocus('${n}')">${n}</button>`
+  ).join('');
+  renderSchemaDetail();
+}
+
+function setFocus(naam) { currentSchemaFocus=naam; loadSchemas(); }
+
+function renderSchemaDetail() {
+  const oefs = SCHEMAS.filter(s=>s.naam===currentSchemaFocus);
+  document.getElementById('schema-detail').innerHTML = oefs.map(oef => {
+    const gew = pyramidWeights(parseFloat(oef.gewicht_start)||20, parseFloat(oef.gewicht_stap)||2.5, oef.sets_aantal||3);
+    return `<div class="card">
+      <div style="font-weight:700;font-size:16px;margin-bottom:4px">${oef.oefening_naam}</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">${oef.spiergroep} · ${oef.sets_aantal} sets · ${oef.reps_min}–${oef.reps_max} reps</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.5">${oef.uitleg||''}</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Piramide (${oef.gewicht_stap}kg stap):</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+        ${gew.map((g,i)=>`<div style="background:var(--surface2);border-radius:8px;padding:6px 12px;text-align:center">
+          <div style="color:var(--muted);font-size:10px">Set ${i+1}</div>
+          <div style="font-weight:700;font-size:13px">${g}kg</div>
+        </div>`).join('')}
+      </div>
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:12px;color:var(--muted)">Startgewicht:</span>
+          <input type="number" value="${oef.gewicht_start}" step="2.5" min="0"
+            style="width:70px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:5px 8px;font-size:13px;text-align:center"
+            onchange="updateGewicht(${oef.id},this.value)">
+          <span style="font-size:12px;color:var(--muted)">kg</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:12px;color:var(--muted)">Sets:</span>
+          <select style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:5px 8px;font-size:13px" onchange="updateSets(${oef.id},this.value)">
+            ${[1,2,3,4,5].map(n=>`<option value="${n}" ${n===oef.sets_aantal?'selected':''}>${n}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function updateGewicht(id, val) {
+  await sb.from('gym_schemas').update({gewicht_start:parseFloat(val)}).eq('id',id);
+  const idx=SCHEMAS.findIndex(s=>s.id===id);
+  if (idx>=0) SCHEMAS[idx].gewicht_start=parseFloat(val);
+  setTimeout(()=>renderSchemaDetail(), 300);
+  toast('✓ Gewicht opgeslagen');
+}
+async function updateSets(id, val) {
+  await sb.from('gym_schemas').update({sets_aantal:parseInt(val)}).eq('id',id);
+  const idx=SCHEMAS.findIndex(s=>s.id===id);
+  if (idx>=0) SCHEMAS[idx].sets_aantal=parseInt(val);
+  setTimeout(()=>renderSchemaDetail(), 300);
+  toast('✓ Aantal sets opgeslagen');
+}
+
+// ── RITTEN ────────────────────────────────────────────
+async function loadRitten() {
+  document.getElementById('ritten-list').innerHTML = '<div class="loading-row"><div class="spinner"></div></div>';
+  const { data, error } = await sb.from('fiets_ritten').select('*').order('datum',{ascending:false});
+  if (error) {
+    document.getElementById('ritten-list').innerHTML = `<div class="error-banner">Fout: ${error.message}</div>`;
+    return;
+  }
+  rittenData = data || [];
+  renderRitten();
+}
+
+function renderRitten() {
+  document.getElementById('ritten-sub').textContent = `${rittenData.length} ritten gelogd`;
+
+  const totKm = rittenData.reduce((a,r)=>a+(parseFloat(r.afstand_km)||0),0);
+  const totMin = rittenData.reduce((a,r)=>a+(parseInt(r.tijd_min)||0),0);
+  const maxKm = Math.max(...rittenData.map(r=>parseFloat(r.afstand_km)||0));
+  const metHerstel = rittenData.filter(r=>r.herstel_sec!=null);
+  const gemHerstel = metHerstel.length ? Math.round(metHerstel.reduce((a,r)=>a+r.herstel_sec,0)/metHerstel.length) : null;
+  const prRit = rittenData.find(r=>r.is_pr);
+
+  document.getElementById('ritten-stats').innerHTML = `
+    <div class="stat-tile"><div class="val">${totKm.toFixed(0)}</div><div class="lbl">Totaal km</div></div>
+    <div class="stat-tile"><div class="val">${rittenData.length}</div><div class="lbl">Ritten</div></div>
+    <div class="stat-tile"><div class="val">${Math.round(totMin/60)}u</div><div class="lbl">Totaal tijd</div></div>
+    <div class="stat-tile"><div class="val">${maxKm.toFixed(1)}</div><div class="lbl">PR km</div></div>
+    ${gemHerstel ? `<div class="stat-tile"><div class="val">${gemHerstel}s</div><div class="lbl">Gem. herstel</div></div>` : ''}
+    ${rittenData.filter(r=>r.rpe).length ? `<div class="stat-tile"><div class="val">${(rittenData.filter(r=>r.rpe).reduce((a,r)=>a+r.rpe,0)/rittenData.filter(r=>r.rpe).length).toFixed(1)}</div><div class="lbl">Gem. RPE</div></div>` : ''}`;
+
+  // Chart: afstand
+  const wrap = document.getElementById('chart-wrap');
+  if (rittenData.length > 1) {
+    wrap.style.display='block';
+    const ctx=document.getElementById('ritten-chart').getContext('2d');
+    if (rittenChart) rittenChart.destroy();
+    const last15=[...rittenData].reverse().slice(-15);
+    rittenChart=new Chart(ctx,{type:'bar',data:{
+      labels:last15.map(r=>r.datum.slice(5)),
+      datasets:[{data:last15.map(r=>r.afstand_km),backgroundColor:'#e85d2688',borderColor:'#e85d26',borderWidth:2,borderRadius:6}]
+    },options:{responsive:true,plugins:{legend:{display:false}},scales:{
+      x:{ticks:{color:'#94a3b8',font:{size:10}},grid:{display:false}},
+      y:{ticks:{color:'#94a3b8'},grid:{color:'#2e3650'}}
+    }}});
+  } else { wrap.style.display='none'; }
+
+  // Chart: herstel
+  const metHerstelData = [...rittenData].reverse().filter(r=>r.herstel_sec!=null).slice(-15);
+  const hwrap = document.getElementById('herstel-chart-wrap');
+  if (metHerstelData.length > 2) {
+    hwrap.style.display='block';
+    const ctx2=document.getElementById('herstel-chart').getContext('2d');
+    if (herstelChart) herstelChart.destroy();
+    herstelChart=new Chart(ctx2,{type:'line',data:{
+      labels:metHerstelData.map(r=>r.datum.slice(5)),
+      datasets:[{data:metHerstelData.map(r=>r.herstel_sec),borderColor:'#3b82f6',backgroundColor:'#3b82f622',
+        pointBackgroundColor:'#3b82f6',pointRadius:4,tension:0.3,fill:true}]
+    },options:{responsive:true,plugins:{legend:{display:false}},scales:{
+      x:{ticks:{color:'#94a3b8',font:{size:10}},grid:{display:false}},
+      y:{ticks:{color:'#94a3b8'},grid:{color:'#2e3650'},title:{display:true,text:'sec',color:'#94a3b8'}}
+    }}});
+  } else { hwrap.style.display='none'; }
+
+  document.getElementById('ritten-list').innerHTML = rittenData.map(r => `
+    <div class="rit-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="rit-datum">${fmtDatum(r.datum)} · rit #${r.rit_nummer||'?'} ${r.is_pr?'🏆':''}</div>
+          <div class="rit-km">${r.afstand_km} km</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="text-align:right;font-size:13px;color:var(--muted)">RPE ${r.rpe||'—'}</div>
+        </div>
+      </div>
+      <div class="rit-stats">
+        ${r.tijd_min?`<div class="rit-stat"><strong>${r.tijd_min}</strong> min</div>`:''}
+        ${r.weerstand?`<div class="rit-stat">Weerstand <strong>${r.weerstand}</strong></div>`:''}
+        ${r.herstel_sec!=null?`<div class="rit-stat">Herstel <strong>${r.herstel_sec}</strong>s</div>`:''}
+        ${r.type_rit?`<div class="rit-stat">${r.type_rit}</div>`:''}
+      </div>
+      ${(r.hs_0_10||r.hs_10_20||r.hs_20_30)?`<div class="hs-zones">
+        ${r.hs_0_10?`<div class="hs-zone">0–10: <strong>${r.hs_0_10}</strong></div>`:''}
+        ${r.hs_10_20?`<div class="hs-zone">10–20: <strong>${r.hs_10_20}</strong></div>`:''}
+        ${r.hs_20_30?`<div class="hs-zone">20–30: <strong>${r.hs_20_30}</strong></div>`:''}
+      </div>`:''}
+      ${r.notities?`<div style="font-size:13px;color:var(--muted);margin-top:8px;line-height:1.4">${r.notities}</div>`:''}
     </div>`).join('');
 }
 
-function voegOmstandigheidToe(){
-  const naam=document.getElementById('nieuw-omst-naam').value.trim();
-  if(!naam){toon('Vul een naam in');return;}
-  const kleur=document.getElementById('nieuw-omst-kleur').value;
-  const tag=naam.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
-  const lijst=getOmstandigheden();
-  if(lijst.some(o=>o.tag===tag)){toon('Deze optie bestaat al');return;}
-  lijst.push({tag,label:naam,cls:kleur});
-  setOmstandigheden(lijst);
-  document.getElementById('nieuw-omst-naam').value='';
-  renderOmstandighedenLijst();
-  toon('Toegevoegd: '+naam);
+function openAddRit() {
+  const f=document.getElementById('add-rit-form');
+  f.style.display=f.style.display==='none'?'block':'none';
+  if (f.style.display==='block') document.getElementById('rit-datum').value=new Date().toISOString().split('T')[0];
 }
+function closeAddRit() { document.getElementById('add-rit-form').style.display='none'; }
 
-function verwijderOmstandigheid(index){
-  const lijst=getOmstandigheden();
-  const verwijderd=lijst.splice(index,1)[0];
-  setOmstandigheden(lijst);
-  renderOmstandighedenLijst();
-  toon('Verwijderd: '+(verwijderd?.label||''));
-}
-let chartSpeed, chartHerstel, chartRpe;
-
-const SEED=[
-  {datum:'2025-03-01',rit_nummer:1,afstand_km:15.30,tijd_min:30,weerstand:10,type_rit:'steady-state',hs_0_10:'137-141',hs_10_20:'137-141',hs_20_30:'137-141',herstel_sec:null,rpe:null,omstandigheden:'',notities:'Eerste rit',is_pr:false},
-  {datum:'2025-03-05',rit_nummer:2,afstand_km:15.38,tijd_min:30,weerstand:10,type_rit:'steady-state',hs_0_10:'<140',hs_10_20:'<140',hs_20_30:'iets boven 140',herstel_sec:52,rpe:null,omstandigheden:'',notities:'',is_pr:false},
-  {datum:'2025-03-08',rit_nummer:3,afstand_km:15.48,tijd_min:30,weerstand:10,type_rit:'steady-state',hs_0_10:'<140',hs_10_20:'<140',hs_20_30:'~143',herstel_sec:64,rpe:null,omstandigheden:'',notities:'',is_pr:false},
-  {datum:'2025-03-12',rit_nummer:4,afstand_km:15.21,tijd_min:30,weerstand:11,type_rit:'interval',hs_0_10:'pieken 150-160',hs_10_20:'pieken 150-160',hs_20_30:'dalen <140',herstel_sec:49,rpe:null,omstandigheden:'',notities:'3 pieken 35,2–36 km/u',is_pr:false},
-  {datum:'2025-03-15',rit_nummer:5,afstand_km:15.53,tijd_min:30,weerstand:11,type_rit:'steady-state',hs_0_10:'<130',hs_10_20:'<140',hs_20_30:'140-146',herstel_sec:72,rpe:null,omstandigheden:'',notities:'Nieuwe PR — constant niveau 11',is_pr:true},
-  {datum:'2025-03-19',rit_nummer:6,afstand_km:15.68,tijd_min:30,weerstand:11,type_rit:'steady-state',hs_0_10:'<130',hs_10_20:'<140',hs_20_30:'140-146',herstel_sec:72,rpe:null,omstandigheden:'',notities:'',is_pr:false},
-  {datum:'2025-03-22',rit_nummer:7,afstand_km:15.27,tijd_min:30,weerstand:12,type_rit:'interval',hs_0_10:'pieken 150-160',hs_10_20:'pieken 150-160',hs_20_30:'<140',herstel_sec:49,rpe:null,omstandigheden:'',notities:'3 pieken 35+ km/u',is_pr:false},
-  {datum:'2025-03-26',rit_nummer:8,afstand_km:15.81,tijd_min:30,weerstand:11,type_rit:'steady-state',hs_0_10:'<130',hs_10_20:'<140',hs_20_30:'>145',herstel_sec:84,rpe:null,omstandigheden:'',notities:'Nieuwe PR',is_pr:true},
-  {datum:'2025-03-29',rit_nummer:9,afstand_km:14.86,tijd_min:30,weerstand:11,type_rit:'interval',hs_0_10:'pieken 150-160',hs_10_20:'dalen 120-125',hs_20_30:'dalen 120-125',herstel_sec:32,rpe:null,omstandigheden:'',notities:'Bewust rustig aan gedaan',is_pr:false},
-  {datum:'2025-04-02',rit_nummer:10,afstand_km:15.89,tijd_min:30,weerstand:11,type_rit:'steady-state',hs_0_10:'<140',hs_10_20:'<140',hs_20_30:'~145',herstel_sec:65,rpe:null,omstandigheden:'',notities:'Nieuwe PR',is_pr:true},
-  {datum:'2025-04-05',rit_nummer:11,afstand_km:15.72,tijd_min:30,weerstand:12,type_rit:'steady-state',hs_0_10:'<140',hs_10_20:'140-145',hs_20_30:'145-150',herstel_sec:59,rpe:null,omstandigheden:'',notities:'',is_pr:false},
-  {datum:'2025-04-09',rit_nummer:12,afstand_km:15.99,tijd_min:30,weerstand:11,type_rit:'steady-state',hs_0_10:'>140',hs_10_20:'150-155',hs_20_30:'150-155',herstel_sec:93,rpe:null,omstandigheden:'hoofdpijn,slecht_geslapen',notities:'Nieuwe PR — hoofdpijn, kort geslapen',is_pr:true},
-  {datum:'2025-04-12',rit_nummer:13,afstand_km:15.28,tijd_min:30,weerstand:12,type_rit:'interval',hs_0_10:'~146',hs_10_20:'~146',hs_20_30:'~146',herstel_sec:80,rpe:null,omstandigheden:'',notities:'3 pieken boven 35 km/u — gem 146 bpm',is_pr:false},
-  {datum:'2025-04-16',rit_nummer:14,afstand_km:15.98,tijd_min:30,weerstand:11,type_rit:'steady-state',hs_0_10:'<140',hs_10_20:'<145',hs_20_30:'>150',herstel_sec:72,rpe:null,omstandigheden:'',notities:'Nieuwe PR — ademhalingstechniek',is_pr:true},
-  {datum:'2025-06-05',rit_nummer:15,afstand_km:15.99,tijd_min:30,weerstand:11,type_rit:'steady-state',hs_0_10:'<140',hs_10_20:'rondom 140',hs_20_30:'140-150',herstel_sec:104,rpe:null,omstandigheden:'warm',notities:'Zweten — warm. Gedeelde PR',is_pr:false},
-];
-
-// API
-async function api(path,opts={}){
-  const r=await fetch(SUPA_URL+'/rest/v1/'+path,{headers:H,...opts});
-  if(!r.ok)throw new Error(await r.text());
-  return r.status===204?null:r.json();
-}
-
-async function laadRitten(){
-  try{
-    const d=await api('fiets_ritten?select=*&order=datum.asc,id.asc');
-    if(d&&d.length>0){
-      ritten=d;
-      herNummerRitten();
-    }
-    else if(d&&d.length===0&&ritten.length===0){
-      const ins=await api('fiets_ritten',{method:'POST',body:JSON.stringify(SEED)});ritten=ins||SEED;herNummerRitten();toon('15 ritten geladen ✓');
-    }
-    // Lege response maar we hadden al ritten in geheugen: niets overschrijven
-  }catch(e){
-    // Bij een fout NIET de bestaande ritten overschrijven met SEED-data.
-    // Alleen als we nog helemaal niets hadden geladen, gebruiken we SEED als noodgreep.
-    if(ritten.length===0){ritten=SEED;herNummerRitten();}
-    toon('Kon niet verversen — database mogelijk nog opstartend. Probeer opnieuw.');
-  }
-  document.getElementById('topbar-sub').textContent=ritten.length+' ritten';
-}
-
-// Rit-nummers zijn puur een weergave-volgnummer gebaseerd op datum-volgorde.
-// Dit voorkomt duplicate/verkeerde nummers wanneer ritten niet-chronologisch worden ingevoerd.
-function herNummerRitten(){
-  ritten = ritten.slice().sort((a,b)=>{
-    const da=new Date(a.datum||0), db=new Date(b.datum||0);
-    if(da-db!==0) return da-db;
-    return (a.id||0)-(b.id||0);
-  });
-  ritten.forEach((r,i)=>{ r._weergaveNr = i+1; });
-}
-
-// HELPERS
-function kmh(r){return ((+r.afstand_km||0)/((+r.tijd_min||30)/60)).toFixed(2);}
-function fmtHerstel(s){if(!s)return'—';const m=Math.floor(s/60),sec=s%60;return m>0?m+'m '+sec+'s':sec+'s';}
-function fmtDatum(d){if(!d)return'—';return new Date(d).toLocaleDateString('nl-NL',{day:'2-digit',month:'2-digit'});}
-function parsHerstel(s){
-  if(!s)return null;
-  const m1=s.match(/(\d+)\s*m[ia]?n?\s*(\d+)/i);if(m1)return +m1[1]*60+ +m1[2];
-  const m2=s.match(/(\d+)\s*s/i);if(m2)return +m2[1];
-  const m3=s.match(/^(\d+)$/);if(m3)return +m3[1];
-  return null;
-}
-
-// TOAST
-function toon(msg){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2600);
-}
-
-// NAVIGATE
-function navigate(page){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.getElementById('page-'+page).classList.add('active');
-  const navEl = document.querySelector('[data-page="'+page+'"]');
-  if(navEl) navEl.classList.add('active');
-  else {
-    // Submenu-pagina (zoals omstandigheden-beheer): houd de bijbehorende hoofdtab gemarkeerd
-    const fallback = document.querySelector('[data-page="invoer"]');
-    if(fallback) fallback.classList.add('active');
-  }
-  if(page==='dashboard')renderDashboard();
-  if(page==='overzicht')renderOverzicht();
-  if(page==='analyse')renderAnalyse();
-  if(page==='invoer')renderInvoer();
-  if(page==='omstandigheden')renderOmstandighedenBeheer();
-}
-document.querySelectorAll('.nav-item').forEach(n=>{
-  n.addEventListener('click',()=>navigate(n.dataset.page));
-});
-
-// ── DASHBOARD ────────────────────────────────────────────
-function renderDashboard(){
-  const el=document.getElementById('page-dashboard');
-  if(!ritten.length){el.innerHTML='<div class="loading"><div class="spinner"></div>Laden...</div>';return;}
-  const prs=ritten.filter(r=>r.is_pr);
-  const beste=Math.max(...ritten.map(r=>+r.afstand_km||0));
-  const gem=(ritten.reduce((a,r)=>a+((+r.afstand_km||0)/((+r.tijd_min||30)/60)),0)/ritten.length).toFixed(2);
-  const laaste=ritten[ritten.length-1];
-  const eerste=ritten[0];
-  const verb=((+laaste.afstand_km-+eerste.afstand_km)/+eerste.afstand_km*100).toFixed(1);
-
-  el.innerHTML=`
-    <div class="stat-row">
-      <div class="stat-card purple"><div class="stat-label">Totaal ritten</div><div class="stat-value">${ritten.length}</div></div>
-      <div class="stat-card teal"><div class="stat-label">Beste afstand</div><div class="stat-value">${beste.toFixed(2)}<span class="stat-unit"> km</span></div></div>
-    </div>
-    <div class="stat-row">
-      <div class="stat-card amber"><div class="stat-label">Gem. snelheid</div><div class="stat-value">${gem}<span class="stat-unit"> km/u</span></div></div>
-      <div class="stat-card coral"><div class="stat-label">PR's behaald</div><div class="stat-value">${prs.length}<span class="stat-unit"> keer</span></div></div>
-    </div>
-    <div class="card">
-      <div class="card-title">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        Snelheidsontwikkeling
-      </div>
-      <div class="chart-wrap" style="height:198px;"><canvas id="c-speed"></canvas></div>
-      <div style="display:flex;gap:12px;margin-top:8px;">
-        <span style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;"><span style="width:10px;height:3px;background:var(--t400);border-radius:2px;display:inline-block;"></span>Steady</span>
-        <span style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;"><span style="width:10px;height:3px;background:var(--c400);border-radius:2px;display:inline-block;"></span>Interval</span>
-        <span style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;">🏆 PR</span>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">Hersteltijd naar 119 bpm</div>
-      <div class="chart-wrap"><canvas id="c-herstel"></canvas></div>
-    </div>
-    <div class="insight">
-      <div class="insight-icon">💡</div>
-      <div>
-        <div class="insight-title">Progressie +${verb}% t.o.v. rit 1</div>
-        <div class="insight-text">Beste afstand ${beste.toFixed(2)} km · ${prs.length} persoonlijke records · Gemiddeld ${gem} km/u</div>
-      </div>
-    </div>`;
-
-  // Speed chart
-  if(typeof Chart==='undefined'){
-    document.getElementById('c-speed').parentElement.innerHTML='<div class="empty" style="padding:20px;"><div class="empty-icon" style="font-size:22px;">📉</div><div style="font-size:12px;">Grafiekbibliotheek wordt geladen...</div></div>';
-    // Automatische retry: Chart.js was nog niet klaar bij eerste render
-    setTimeout(()=>{ if(typeof Chart!=='undefined') renderDashboard(); },600);
-  } else {
-  const labels=ritten.map(r=>'R'+r._weergaveNr);
-  const speeds=ritten.map(r=>+kmh(r));
-  const isPrArr=ritten.map(r=>!!r.is_pr);
-  const ptBg=ritten.map(r=>r.type_rit==='interval'?'#D85A30':'#1D9E75');
-  const ptR=ritten.map(r=>r.is_pr?7:4);
-  const ptBorder=ritten.map(r=>r.is_pr?'#BA7517':'transparent');
-
-  // Plugin: tekent een trofee-icoon exact onder de x-as labels, op dezelfde pixel-positie
-  // als het bijbehorende datapunt. Hierdoor sluit de trofee altijd 1-op-1 aan op de juiste rit,
-  // ook al verschuift Chart.js zijn interne marges bij een ander aantal ritten.
-  const prTrofeePlugin={
-    id:'prTrofee',
-    afterDraw(chart){
-      const {ctx}=chart;
-      const xAxis=chart.scales.x;
-      const meta=chart.getDatasetMeta(0);
-      meta.data.forEach((point,i)=>{
-        if(isPrArr[i]){
-          ctx.save();
-          ctx.font='13px sans-serif';
-          ctx.textAlign='center';
-          ctx.textBaseline='top';
-          // Net onder de as-labels tekenen (xAxis.bottom + ruimte voor het label zelf)
-          ctx.fillText('🏆', point.x, xAxis.bottom+8);
-          ctx.restore();
-        }
-      });
-    }
-  };
-
-  if(chartSpeed)chartSpeed.destroy();
-  chartSpeed=new Chart(document.getElementById('c-speed'),{
-    type:'line',
-    data:{labels,datasets:[{data:speeds,borderColor:'#7F77DD',borderWidth:2,pointBackgroundColor:ptBg,pointRadius:ptR,pointBorderColor:ptBorder,pointBorderWidth:2,tension:.35,fill:false}]},
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{bottom:24}},plugins:{legend:{display:false},tooltip:{callbacks:{afterLabel:ctx=>isPrArr[ctx.dataIndex]?'🏆 PR ('+(ritten[ctx.dataIndex].type_rit||'')+')':''}}},scales:{x:{ticks:{font:{size:9}},grid:{display:false}},y:{ticks:{font:{size:9}},grid:{color:'#F0EFF9'}}}},
-    plugins:[prTrofeePlugin]
-  });
-
-  // Herstel chart
-  const hr=ritten.filter(r=>r.herstel_sec);
-  if(chartHerstel)chartHerstel.destroy();
-  chartHerstel=new Chart(document.getElementById('c-herstel'),{
-    type:'bar',
-    data:{labels:hr.map(r=>'R'+r._weergaveNr),datasets:[{data:hr.map(r=>r.herstel_sec),backgroundColor:hr.map(r=>r.type_rit==='interval'?'#F0997B':'#5DCAA5'),borderRadius:5}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9}},grid:{display:false}},y:{ticks:{font:{size:9}},grid:{color:'#F0EFF9'}}}}
-  });
+async function saveRit() {
+  const datum=document.getElementById('rit-datum').value;
+  const km=parseFloat(document.getElementById('rit-km').value);
+  if (!datum||!km) { toast('Datum en km zijn verplicht'); return; }
+  setBtnLoading('save-rit-btn', true);
+  try {
+    // Bepaal rit_nummer
+    const { data: last } = await sb.from('fiets_ritten').select('rit_nummer').order('rit_nummer',{ascending:false}).limit(1);
+    const nextNr = ((last?.[0]?.rit_nummer)||0) + 1;
+    const { error } = await sb.from('fiets_ritten').insert({
+      datum, afstand_km:km,
+      tijd_min:parseInt(document.getElementById('rit-tijd').value)||null,
+      weerstand:parseInt(document.getElementById('rit-weerstand').value)||null,
+      type_rit:document.getElementById('rit-type').value,
+      rpe:parseInt(document.getElementById('rit-rpe').value)||null,
+      herstel_sec:parseInt(document.getElementById('rit-herstel').value)||null,
+      hs_0_10:document.getElementById('rit-hs0').value||null,
+      hs_10_20:document.getElementById('rit-hs1').value||null,
+      hs_20_30:document.getElementById('rit-hs2').value||null,
+      notities:document.getElementById('rit-notities').value||null,
+      rit_nummer:nextNr,
+    });
+    if (error) throw error;
+    closeAddRit();
+    toast('✓ Rit opgeslagen!');
+    loadRitten();
+  } catch(e) {
+    toast('Fout: '+e.message, 4000);
+    setBtnLoading('save-rit-btn', false);
   }
 }
 
-// ── INVOER ────────────────────────────────────────────────
-function renderInvoer(){
-  const el=document.getElementById('page-invoer');
-  const nr=editId?ritten.find(r=>r.id===editId)?._weergaveNr:(ritten.length+1);
-  const today=new Date().toISOString().split('T')[0];
-  el.innerHTML=`
-    <div class="success-banner" id="inv-ok">✓ Rit opgeslagen!</div>
-    <div style="background:var(--t50);border-radius:12px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--t600)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      <span style="font-size:13px;color:var(--t800);font-weight:500;">${editId?'Rit bewerken':'Rit '+nr+' — '+new Date().toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long'})}</span>
-    </div>
-    <div class="form-row">
-      <div class="form-group"><label>Datum</label><input type="date" id="f-datum" value="${today}"></div>
-      <div class="form-group"><label>Weerstand</label><input type="number" id="f-weerstand" placeholder="11" min="1" max="25"></div>
-    </div>
-    <div class="form-group">
-      <label>Afstand</label>
-      <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center;">
-        <input type="number" id="f-afstand-km" placeholder="15" min="0">
-        <span style="text-align:center;color:var(--muted);font-size:13px;">,</span>
-        <input type="number" id="f-afstand-deci" placeholder="20" min="0" max="99">
-      </div>
-      <div style="font-size:11px;color:var(--muted);margin-top:4px;">tweede veld = honderdsten van een km, bijv. 15 + 20 = 15,20 km</div>
-    </div>
-    <div class="form-group">
-      <label>Duur van de sessie</label>
-      <div style="display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center;">
-        <input type="number" id="f-tijd-min" placeholder="30" min="1" value="30">
-        <span style="color:var(--muted);font-size:13px;">minuten</span>
-      </div>
-    </div>
-    <div class="form-group"><label>Type rit</label>
-      <select id="f-type" onchange="updatePrPreview()">
-        <option value="steady-state">Steady-state</option>
-        <option value="interval">Interval</option>
-        <option value="herstel">Herstel</option>
-      </select>
-    </div>
-    <div class="form-section">Hartslag per blok</div>
-    <div class="hs-row" style="margin-bottom:12px;">
-      <div class="hs-block"><div class="hs-block-label">0–10 min</div><input type="text" id="f-hs1" placeholder="&lt; 130"></div>
-      <div class="hs-block"><div class="hs-block-label">10–20 min</div><input type="text" id="f-hs2" placeholder="&lt; 140"></div>
-      <div class="hs-block last"><div class="hs-block-label">20–30 min</div><input type="text" id="f-hs3" placeholder="140–146"></div>
-    </div>
-    <div class="form-group">
-      <label>Herstel naar 119 bpm</label>
-      <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center;">
-        <input type="number" id="f-herstel-min" placeholder="1" min="0">
-        <span style="text-align:center;color:var(--muted);font-size:13px;">min</span>
-        <input type="number" id="f-herstel-sec" placeholder="12" min="0" max="59">
-      </div>
-    </div>
-    <div class="form-group">
-      <label>RPE — ervaren inspanning (1–10) <span style="color:var(--muted);font-weight:400;">hoe zwaar de rit voor jou aanvoelde</span></label>
-      <select id="f-rpe">
-        <option value="">— kies —</option>
-        ${[1,2,3,4,5,6,7,8,9,10].map(i=>`<option value="${i}">${i}</option>`).join('')}
-      </select>
-    </div>
-    <div class="form-section" style="display:flex;align-items:center;justify-content:space-between;">
-      <span>Omstandigheden</span>
-      <span onclick="navigate('omstandigheden')" style="color:var(--p600);font-weight:600;cursor:pointer;text-transform:none;letter-spacing:0;font-size:12px;">⚙️ Beheren</span>
-    </div>
-    <div class="tags" id="tags-wrap"></div>
-    <div class="form-group" style="margin-top:12px;">
-      <label>Opmerkingen</label>
-      <textarea id="f-notities" placeholder="Ademhalingstechniek, bijzonderheden..."></textarea>
-    </div>
-    <div id="pr-preview" style="display:none;background:var(--a50);border:1px solid var(--a100);border-radius:12px;padding:12px 14px;margin-bottom:16px;align-items:center;gap:8px;">
-      <span style="font-size:20px;">🏆</span>
-      <div>
-        <div style="font-size:13px;font-weight:600;color:var(--a900);">Dit wordt een persoonlijk record!</div>
-        <div style="font-size:12px;color:var(--a600);" id="pr-preview-text"></div>
-      </div>
-    </div>
-    <button class="btn btn-secondary" onclick="resetForm()">Wissen</button>
-    <button class="btn btn-primary" onclick="slaOp()">Rit opslaan</button>`;
-
-  renderOmstandighedenTags();
-
-  // live PR-check bij elke wijziging in afstand
-  ['f-afstand-km','f-afstand-deci'].forEach(id=>{
-    document.getElementById(id).addEventListener('input', updatePrPreview);
-  });
-
-  // tags init (oude losse listener verwijderd, zit nu in renderOmstandighedenTags)
-  activeTags = editId ? activeTags : new Set();
-
-  // prefill bij bewerken
-  if(editId){
-    const r=ritten.find(x=>x.id===editId);
-    if(r){
-      document.getElementById('f-datum').value=r.datum||today;
-      const km=Math.floor(+r.afstand_km||0);
-      const decimaal=Math.round(((+r.afstand_km||0)-km)*100);
-      document.getElementById('f-afstand-km').value=km||'';
-      document.getElementById('f-afstand-deci').value=decimaal||'';
-      document.getElementById('f-tijd-min').value=r.tijd_min||30;
-      document.getElementById('f-weerstand').value=r.weerstand||'';
-      document.getElementById('f-type').value=r.type_rit||'steady-state';
-      document.getElementById('f-hs1').value=r.hs_0_10||'';
-      document.getElementById('f-hs2').value=r.hs_10_20||'';
-      document.getElementById('f-hs3').value=r.hs_20_30||'';
-      if(r.herstel_sec){
-        document.getElementById('f-herstel-min').value=Math.floor(r.herstel_sec/60)||'';
-        document.getElementById('f-herstel-sec').value=r.herstel_sec%60||'';
-      }
-      document.getElementById('f-rpe').value=r.rpe||'';
-      document.getElementById('f-notities').value=r.notities||'';
-      activeTags=new Set((r.omstandigheden||'').split(',').filter(Boolean));
-      renderOmstandighedenTags();
-      updatePrPreview();
-    }
-  } else {
-    updatePrPreview();
+// ── VOORTGANG ─────────────────────────────────────────
+async function loadVoortgang() {
+  if (SCHEMAS.length === 0) {
+    const { data } = await sb.from('gym_schemas').select('*').order('naam').order('volgorde');
+    SCHEMAS = data || [];
   }
-}
-
-// PR-detectie: de app bepaalt zelf of een rit een PR is, gebaseerd op het type rit
-// Een PR = de grootste afstand tot nu toe binnen hetzelfde type rit (steady-state, interval, herstel)
-function berekenAfstandUitVelden(){
-  const km=parseFloat(document.getElementById('f-afstand-km')?.value)||0;
-  const deciStr=(document.getElementById('f-afstand-deci')?.value||'').trim();
-  // Het tweede veld is de waarde NA de komma. "20" betekent ",20", niet 20 losse meters.
-  // Bij één cijfer (bijv. "2") wordt dat ",20" — twee cijfers ("20") blijft ",20".
-  let decimaal = 0;
-  if(deciStr){
-    const cijfers = deciStr.padEnd(2,'0').slice(0,2);
-    decimaal = parseInt(cijfers,10)/100;
+  const sel=document.getElementById('voortgang-sel');
+  const oefKeys=[...new Map(SCHEMAS.map(s=>[s.oefening_key,s])).values()];
+  if (sel.options.length === 0) {
+    sel.innerHTML=oefKeys.map(o=>`<option value="${o.oefening_key}">${o.oefening_naam}</option>`).join('');
   }
-  return km + decimaal;
+  renderVoortgang();
 }
 
-function isNieuwePR(afstand, type, excludeId){
-  const zelfdeType = ritten.filter(r=>r.type_rit===type && r.id!==excludeId);
-  if(!zelfdeType.length) return afstand>0; // eerste rit van dit type is altijd een PR
-  const beste = Math.max(...zelfdeType.map(r=>+r.afstand_km||0));
-  return afstand > beste;
-}
+async function renderVoortgang() {
+  const key=document.getElementById('voortgang-sel').value;
+  if (!key) return;
+  document.getElementById('pr-list').innerHTML = '<div class="loading-row"><div class="spinner"></div></div>';
+  document.getElementById('sessie-hist').innerHTML = '';
 
-// Herberekent voor ALLE ritten of ze daadwerkelijk een PR waren, op basis van de chronologische
-// volgorde (oudste naar nieuwste) en gescheiden per type rit. Dit corrigeert situaties waarin
-// ritten achteraf, niet-chronologisch, of met een verkeerde is_pr-waarde zijn ingevoerd.
-async function herberekenAllePRs(){
-  if(!confirm('Alle PR-vlaggen herberekenen op basis van datum-volgorde? Dit overschrijft de huidige is_pr waarden in de database.')) return;
-  toon('PR\'s herberekenen...');
+  // Haal alle sets op voor deze oefening
+  const { data: sets } = await sb.from('gym_sets')
+    .select('*, gym_sessies(datum,schema_naam,gevoel)')
+    .eq('oefening_key', key)
+    .order('created_at');
 
-  // Chronologisch sorteren (oud → nieuw), net als herNummerRitten() al doet voor weergave
-  const chronologisch = ritten.slice().sort((a,b)=>{
-    const da=new Date(a.datum||0), db=new Date(b.datum||0);
-    if(da-db!==0) return da-db;
-    return (a.id||0)-(b.id||0);
-  });
-
-  const besteTotNuToe = {}; // per type rit het record tot dat moment
-  const wijzigingen = [];
-
-  chronologisch.forEach(r=>{
-    const type = r.type_rit || 'steady-state';
-    const afstand = +r.afstand_km || 0;
-    const huidigBeste = besteTotNuToe[type] || 0;
-    const nieuweIsPr = afstand > huidigBeste;
-    if(nieuweIsPr){ besteTotNuToe[type] = afstand; }
-    if(!!r.is_pr !== nieuweIsPr){
-      wijzigingen.push({id:r.id, is_pr:nieuweIsPr});
-    }
-  });
-
-  if(!wijzigingen.length){
-    toon('Alles klopte al — geen wijzigingen nodig ✓');
+  if (!sets || sets.length === 0) {
+    document.getElementById('pr-list').innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0">Nog geen data</div>';
+    document.getElementById('sessie-hist').innerHTML = '';
     return;
   }
 
-  try{
-    // Eén voor één bijwerken (PostgREST ondersteunt geen bulk-update met verschillende waarden per rij)
-    for(const w of wijzigingen){
-      await api('fiets_ritten?id=eq.'+w.id,{method:'PATCH',body:JSON.stringify({is_pr:w.is_pr})});
-    }
-    await laadRitten();
-    renderDashboard();
-    toon(`${wijzigingen.length} rit(ten) bijgewerkt — PR's kloppen nu ✓`);
-    if(document.getElementById('page-analyse').classList.contains('active')) renderAnalyse();
-    if(document.getElementById('page-overzicht').classList.contains('active')) filterOvz();
-  }catch(e){
-    toon('Herberekenen mislukt — check verbinding');
-  }
-}
+  // Groepeer per sessie
+  const perSessie = {};
+  sets.forEach(s => {
+    const sid = s.sessie_id;
+    if (!perSessie[sid]) perSessie[sid] = {
+      datum: s.gym_sessies?.datum, schema_naam: s.gym_sessies?.schema_naam,
+      gevoel: s.gym_sessies?.gevoel, sets: []
+    };
+    perSessie[sid].sets.push(s);
+  });
 
-function updatePrPreview(){
-  const afstand = berekenAfstandUitVelden();
-  const type = document.getElementById('f-type')?.value || 'steady-state';
-  const preview = document.getElementById('pr-preview');
-  if(!preview) return;
-  if(afstand>0 && isNieuwePR(afstand, type, editId)){
-    preview.style.display='flex';
-    const zelfdeType=ritten.filter(r=>r.type_rit===type && r.id!==editId);
-    const vorigeBeste=zelfdeType.length?Math.max(...zelfdeType.map(r=>+r.afstand_km||0)):0;
-    document.getElementById('pr-preview-text').textContent = vorigeBeste>0
-      ? `${afstand.toFixed(2)} km verslaat je vorige record van ${vorigeBeste.toFixed(2)} km (${type})`
-      : `Eerste ${type}-rit — automatisch een record`;
-  } else {
-    preview.style.display='none';
-  }
-}
+  const sessieList = Object.values(perSessie).sort((a,b)=>a.datum<b.datum?-1:1);
+  const dataPunten = sessieList.map(sess => ({
+    d: sess.datum,
+    piek: Math.max(...sess.sets.map(s=>parseFloat(s.gewicht)||0)),
+    gevoel: sess.gevoel,
+    sets: sess.sets,
+  }));
 
-function resetForm(){editId=null;renderInvoer();}
+  // Chart
+  const ctx=document.getElementById('voortgang-chart').getContext('2d');
+  if (voortgangChart) voortgangChart.destroy();
+  voortgangChart=new Chart(ctx,{type:'line',data:{
+    labels:dataPunten.map(d=>d.d?.slice(5)||''),
+    datasets:[{data:dataPunten.map(d=>d.piek),borderColor:'#e85d26',backgroundColor:'#e85d2622',
+      pointBackgroundColor:'#e85d26',pointRadius:5,tension:0.3,fill:true}]
+  },options:{responsive:true,plugins:{legend:{display:false}},scales:{
+    x:{ticks:{color:'#94a3b8',font:{size:10}},grid:{display:false}},
+    y:{ticks:{color:'#94a3b8'},grid:{color:'#2e3650'},title:{display:true,text:'kg',color:'#94a3b8'}}
+  }}});
 
-async function slaOp(){
-  const afstand = berekenAfstandUitVelden();
-  if(!afstand){toon('Vul minimaal een afstand in');return;}
-  const type = document.getElementById('f-type').value;
-  const herstelMin = parseInt(document.getElementById('f-herstel-min').value)||0;
-  const herstelSec = parseInt(document.getElementById('f-herstel-sec').value)||0;
-  const herstelTotaal = (herstelMin*60 + herstelSec) || null;
-  const isPr = isNieuwePR(afstand, type, editId);
-
-  const payload={
-    datum:document.getElementById('f-datum').value,
-    rit_nummer:editId?undefined:(ritten.length+1),
-    afstand_km:afstand,
-    tijd_min:parseInt(document.getElementById('f-tijd-min').value)||30,
-    weerstand:parseInt(document.getElementById('f-weerstand').value)||null,
-    type_rit:type,
-    hs_0_10:document.getElementById('f-hs1').value||null,
-    hs_10_20:document.getElementById('f-hs2').value||null,
-    hs_20_30:document.getElementById('f-hs3').value||null,
-    herstel_sec:herstelTotaal,
-    rpe:parseInt(document.getElementById('f-rpe').value)||null,
-    omstandigheden:[...activeTags].join(',')||null,
-    notities:document.getElementById('f-notities').value||null,
-    is_pr:isPr,
-  };
-  try{
-    if(editId){await api('fiets_ritten?id=eq.'+editId,{method:'PATCH',body:JSON.stringify(payload)});toon('Rit bijgewerkt ✓');editId=null;}
-    else{
-      await api('fiets_ritten',{method:'POST',body:JSON.stringify(payload)});
-      toon(isPr?'Nieuw record! 🏆 Claude analyseert...':'Rit opgeslagen! 🎉 Claude analyseert...');
-    }
-    document.getElementById('inv-ok').style.display='block';
-    setTimeout(()=>{if(document.getElementById('inv-ok'))document.getElementById('inv-ok').style.display='none';},3000);
-    await laadRitten();
-    document.getElementById('topbar-sub').textContent=ritten.length+' ritten';
-    resetForm();
-    // Automatische Claude analyse na opslaan nieuwe rit
-    if(!editId){
-      const nieuwsteRit = ritten[ritten.length-1];
-      if(nieuwsteRit){
-        setTimeout(()=>analyseerRit(nieuwsteRit.id), 600);
-      }
-    }
-  }catch(e){toon('Opslaan mislukt — check verbinding');}
-}
-
-// ── OVERZICHT ─────────────────────────────────────────────
-function renderOverzicht(){
-  const el=document.getElementById('page-overzicht');
-  el.innerHTML=`
-    <div class="search-wrap">
-      <input class="search-box" type="search" id="tbl-search" placeholder="🔍  Zoeken op type, stand, notitie..." oninput="filterOvz()">
-    </div>
-    <div class="filter-row">
-      <div class="filter-pill active" data-f="all" onclick="setF(this,'all')">Alle</div>
-      <div class="filter-pill" data-f="steady-state" onclick="setF(this,'steady-state')">Steady-state</div>
-      <div class="filter-pill" data-f="interval" onclick="setF(this,'interval')">Interval</div>
-      
-      <div class="filter-pill" data-f="pr" onclick="setF(this,'pr')">Alleen PR's</div>
-    </div>
-    <div id="rit-list"></div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;margin-bottom:16px;">
-      <span style="font-size:13px;color:var(--muted);" id="ovz-count"></span>
-      <button onclick="exportCSV()" style="border:1px solid var(--border);border-radius:100px;padding:7px 14px;font-size:13px;background:var(--white);color:var(--muted);font-family:var(--font);cursor:pointer;">↓ CSV</button>
+  const piek = Math.max(...dataPunten.map(d=>d.piek));
+  const prItem = dataPunten.find(d=>d.piek===piek);
+  document.getElementById('pr-list').innerHTML = `
+    <div class="pr-item">
+      <div><div class="pr-naam">Piekgewicht</div><div class="pr-datum">${fmtDatum(prItem?.d)}</div></div>
+      <div class="pr-val">${piek} kg</div>
     </div>`;
-  filterOvz();
-}
 
-function setF(el,f){
-  activeFilter=f;
-  document.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active'));
-  el.classList.add('active');
-  filterOvz();
-}
-
-function filterOvz(){
-  const q=(document.getElementById('tbl-search')?.value||'').toLowerCase();
-  let r=ritten;
-  if(activeFilter==='pr')r=r.filter(x=>x.is_pr);
-  else if(activeFilter!=='all')r=r.filter(x=>x.type_rit===activeFilter);
-  if(q)r=r.filter(x=>(x.notities||'').toLowerCase().includes(q)||(x.type_rit||'').includes(q)||String(x.weerstand||'').includes(q));
-  const list=document.getElementById('rit-list');
-  if(!list)return;
-  if(!r.length){list.innerHTML='<div class="empty"><div class="empty-icon">🚴</div>Geen ritten gevonden</div>';document.getElementById('ovz-count').textContent='';return;}
-  list.innerHTML=r.slice().reverse().map(rit=>`
-    <div class="rit-card ${rit.is_pr?'is-pr':''}">
-      <div class="rit-card-top">
-        <span class="rit-nr">Rit ${rit._weergaveNr||rit.rit_nummer||'—'}${rit.is_pr?' 🏆':''}</span>
-        <span class="rit-datum">${fmtDatum(rit.datum)}</span>
+  document.getElementById('sessie-hist').innerHTML = dataPunten.slice().reverse().map(d => `
+    <div class="card" style="margin-bottom:8px;padding:12px 14px">
+      <div class="card-row" style="margin-bottom:6px">
+        <div style="font-size:13px;color:var(--muted)">${fmtDatum(d.d)}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="font-weight:700">${d.piek} kg piek</div>
+          <div style="font-size:18px">${gevoelEmoji(d.gevoel)}</div>
+        </div>
       </div>
-      <div class="rit-afstand">${(+rit.afstand_km||0).toFixed(2)} km</div>
-      <div class="rit-kmh">${kmh(rit)} km/u · Stand ${rit.weerstand||'—'} · Herstel ${fmtHerstel(rit.herstel_sec)}</div>
-      <div class="rit-meta">
-        <span class="badge ${rit.type_rit||'steady'}">${rit.type_rit||'—'}</span>
-        ${rit.rpe?`<span class="badge stand">RPE ${rit.rpe}</span>`:''}
-        ${(rit.omstandigheden||'').split(',').filter(Boolean).map(o=>`<span class="badge herstel">${o.replace(/_/g,' ')}</span>`).join('')}
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${d.sets.map(s=>`<div style="background:var(--surface2);border-radius:6px;padding:4px 10px;font-size:12px">
+          Set ${s.set_nummer}: <strong>${s.gewicht}kg</strong> × ${s.reps||'—'} reps
+        </div>`).join('')}
       </div>
-      ${rit.notities?`<div class="rit-notitie">${rit.notities}</div>`:''}
-      ${rit.hs_0_10||rit.hs_10_20||rit.hs_20_30?`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:8px;">
-        ${rit.hs_0_10?`<div style="background:var(--p50);border-radius:8px;padding:6px 8px;font-size:11px;"><div style="color:var(--p600);font-weight:600;margin-bottom:1px;">0–10</div>${rit.hs_0_10}</div>`:''}
-        ${rit.hs_10_20?`<div style="background:var(--p50);border-radius:8px;padding:6px 8px;font-size:11px;"><div style="color:var(--p600);font-weight:600;margin-bottom:1px;">10–20</div>${rit.hs_10_20}</div>`:''}
-        ${rit.hs_20_30?`<div style="background:var(--a50);border-radius:8px;padding:6px 8px;font-size:11px;"><div style="color:var(--a600);font-weight:600;margin-bottom:1px;">20–30</div>${rit.hs_20_30}</div>`:''}
-      </div>`:''}
-      <div class="rit-actions">
-        <button class="rit-btn edit" onclick="bewerkRit(${rit.id})">✏️ Bewerken</button>
-        <button class="rit-btn del" onclick="verwijderRit(${rit.id})">🗑️ Verwijderen</button>
-      </div>
-      <button class="rit-btn" style="width:100%;margin-top:6px;background:var(--p50);color:var(--p800);border-color:var(--p200);font-weight:500;" onclick="analyseerRit(${rit.id})">🤖 Claude analyse</button>
     </div>`).join('');
-  document.getElementById('ovz-count').textContent=r.length+' ritten';
 }
 
-async function bewerkRit(id){editId=id;navigate('invoer');}
-async function verwijderRit(id){
-  if(!confirm('Rit verwijderen?'))return;
-  try{await api('fiets_ritten?id=eq.'+id,{method:'DELETE'});await laadRitten();filterOvz();toon('Rit verwijderd');}
-  catch(e){toon('Verwijderen mislukt');}
-}
-
-function exportCSV(){
-  const h=['Rit','Datum','Afstand','Km/u','Stand','Type','Herstel sec','RPE','HS 0-10','HS 10-20','HS 20-30','Omstandigheden','Notities','PR'];
-  const rows=ritten.map(r=>[r._weergaveNr||r.rit_nummer,r.datum,(+r.afstand_km).toFixed(2),kmh(r),r.weerstand||'',r.type_rit||'',r.herstel_sec||'',r.rpe||'',r.hs_0_10||'',r.hs_10_20||'',r.hs_20_30||'',r.omstandigheden||'',r.notities||'',r.is_pr?'ja':'']);
-  const csv=[h,...rows].map(r=>r.join(';')).join('\n');
-  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);a.download='fiets_ritten.csv';a.click();
-}
-
-// ── CLAUDE ANALYSE ────────────────────────────────────────
-function bouwRitContext(rit){
-  const s = r => r ? String(r) : '—';
-  return `Rit ${rit._weergaveNr||rit.rit_nummer} op ${rit.datum||'onbekend'}:
-- Afstand: ${(+rit.afstand_km||0).toFixed(2)} km in ${rit.tijd_min||30} min (${kmh(rit)} km/u)
-- Type: ${s(rit.type_rit)} | Weerstand: stand ${s(rit.weerstand)}
-- Hartslag 0-10 min: ${s(rit.hs_0_10)} | 10-20 min: ${s(rit.hs_10_20)} | 20-30 min: ${s(rit.hs_20_30)}
-- Herstel naar 119 bpm: ${rit.herstel_sec ? fmtHerstel(rit.herstel_sec) : '—'}
-- RPE (ervaren inspanning): ${s(rit.rpe)}/10
-- Omstandigheden: ${rit.omstandigheden ? rit.omstandigheden.replace(/_/g,' ') : 'geen'}
-- Notities: ${s(rit.notities)}
-- Persoonlijk record: ${rit.is_pr ? 'ja' : 'nee'}`;
-}
-
-function bouwHistorieContext(){
-  const laatste = ritten.slice(-10);
-  return laatste.map(r=>
-    `R${r._weergaveNr||r.rit_nummer}: ${(+r.afstand_km||0).toFixed(2)}km ${kmh(r)}km/u ${r.type_rit} stand${r.weerstand||'?'}${r.is_pr?' 🏆':''}`
-  ).join('\n');
-}
-
-function sluitModal(){
-  document.getElementById('claude-modal').classList.remove('open');
-  setTimeout(()=>document.getElementById('claude-modal').style.display='none',250);
-}
-
-function toonModal(rit){
-  const modal=document.getElementById('claude-modal');
-  const ritInfo=document.getElementById('claude-rit-info');
-  const output=document.getElementById('claude-output');
-  ritInfo.textContent=`Rit ${rit._weergaveNr||rit.rit_nummer} · ${fmtDatum(rit.datum)} · ${(+rit.afstand_km||0).toFixed(2)} km · ${kmh(rit)} km/u`;
-  output.innerHTML=`<div class="claude-loading"><div class="claude-dot-anim"><span></span><span></span><span></span></div><div style="font-size:13px;">Claude analyseert je rit...</div></div>`;
-  modal.style.display='flex';
-  setTimeout(()=>modal.classList.add('open'),10);
-}
-
-async function analyseerRit(id){
-  const rit = ritten.find(r=>r.id===id);
-  if(!rit){toon('Rit niet gevonden');return;}
-  toonModal(rit);
-  const output=document.getElementById('claude-output');
-
-  const prompt=`Je bent een ervaren sportinstructeur gespecialiseerd in cardio en fietstraining.
-Een atleet heeft zojuist een rit geregistreerd. Analyseer deze rit in vergelijking met de recente ritten en geef persoonlijk, concreet advies.
-
-=== RECENTE RITTEN (laatste 10, voor context) ===
-${bouwHistorieContext()}
-
-=== DEZE RIT ===
-${bouwRitContext(rit)}
-
-Geef je analyse in deze structuur:
-1. **Prestatie** – hoe was deze rit t.o.v. eerdere ritten? Noem concrete cijfers.
-2. **Hartslag & herstel** – wat zegt het hartslagpatroon en de hersteltijd over de conditie?
-3. **Aandachtspunten** – wat valt op (positief of zorgpunt)?
-4. **Advies voor de volgende rit** – één concrete aanbeveling.
-
-Schrijf direct en persoonlijk, maximaal 200 woorden. Gebruik geen opsommingstekens maar gewone alinea's per punt.`;
-
-  try{
-    const resp = await fetch(`${SUPA_URL}/functions/v1/dynamic-action`,{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'Authorization':'Bearer '+SUPA_KEY
-      },
-      body:JSON.stringify({prompt})
-    });
-    const data = await resp.json();
-    const tekst = data.content?.map(b=>b.text||'').join('') || 'Geen analyse ontvangen.';
-
-    // Verwerk de tekst — splits op genummerde headers en geef elk een eigen stijlblok
-    const secties = tekst.split(/\n(?=\d\.)/).filter(Boolean);
-    if(secties.length>=2){
-      const kleuren=['groen','','amber',''];
-      output.innerHTML = secties.map((s,i)=>{
-        const titel = s.match(/^\d+\.\s+\*\*(.+?)\*\*/)?.[1] || '';
-        const inhoud = s.replace(/^\d+\.\s+\*\*(.+?)\*\*\s*[–-]?\s*/,'').trim();
-        return `<div class="claude-section">
-          ${titel?`<div class="claude-section-title">${titel}</div>`:''}
-          <div class="claude-block ${kleuren[i]||''}">${inhoud}</div>
-        </div>`;
-      }).join('');
-    } else {
-      // Als de structuur anders uitvalt, gewoon als tekst tonen
-      output.innerHTML=`<div class="claude-block">${tekst.replace(/\n/g,'<br>')}</div>`;
-    }
-  }catch(e){
-    output.innerHTML=`<div class="claude-block coral">Analyse niet beschikbaar — controleer je verbinding.</div>`;
-  }
-}
-
-// Sluit modal bij klik op de achtergrond
-document.getElementById('claude-modal').addEventListener('click',function(e){
-  if(e.target===this) sluitModal();
-});
-function renderAnalyse(){
-  const el=document.getElementById('page-analyse');
-  const beste=Math.max(...ritten.map(r=>+r.afstand_km||0));
-  const doel=16.5;
-  const pctA=Math.min((beste/doel)*100,100).toFixed(0);
-  const hrR=ritten.filter(r=>r.herstel_sec).slice(-6);
-  const verbH=hrR.length>=2?((hrR[0].herstel_sec-hrR[hrR.length-1].herstel_sec)/hrR[0].herstel_sec*100):0;
-  const pctH=Math.min(Math.max(50+verbH,0),100).toFixed(0);
-  const adviezen=genereerAdviezen();
-
-  el.innerHTML=`
-    <div class="card">
-      <div class="card-title">Doelen & voortgang</div>
-      <div class="goal-card">
-        <div class="goal-label">Doelafstand (doel: ${doel} km)</div>
-        <div class="goal-bar"><div class="goal-fill purple" style="width:${pctA}%"></div></div>
-        <div class="goal-value">${beste.toFixed(2)} / ${doel} km (${pctA}%)</div>
-      </div>
-      <div class="goal-card">
-        <div class="goal-label">Herstelverbetering (laatste 6 ritten)</div>
-        <div class="goal-bar"><div class="goal-fill teal" style="width:${pctH}%"></div></div>
-        <div class="goal-value">${verbH>0?'Sneller: +'+verbH.toFixed(0)+'% verbetering':'Stabiel herstelpatroon'}</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">RPE vs snelheid</div>
-      <div class="chart-wrap" id="rpe-wrap"><canvas id="c-rpe"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-title">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        Sportinstructeur adviezen
-      </div>
-      ${adviezen.map(a=>`<div class="advice ${a.k}"><div class="adv-title">${a.t}</div><div class="adv-text">${a.b}</div></div>`).join('')}
-    </div>
-    <div class="card">
-      <div class="card-title">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
-        Beheer
-      </div>
-      <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px;">
-        Klopt het aantal PR's niet meer met je verwachting (bijv. na het invoeren van oudere ritten)? Herberekenen loopt door alle ritten in datumvolgorde en bepaalt per type rit (steady-state, interval, herstel) opnieuw welke ritten op dat moment een record waren.
-      </div>
-      <button class="btn btn-secondary" style="margin-bottom:0;" onclick="herberekenAllePRs()">🔄 PR's herberekenen</button>
-    </div>`;
-
-  // RPE chart
-  const rpeRitten=ritten.filter(r=>r.rpe);
-  if(rpeRitten.length){
-    if(chartRpe)chartRpe.destroy();
-    chartRpe=new Chart(document.getElementById('c-rpe'),{
-      type:'scatter',
-      data:{datasets:[{data:rpeRitten.map(r=>({x:+r.rpe,y:+kmh(r),label:'R'+r._weergaveNr})),backgroundColor:'#7F77DD',pointRadius:7,pointHoverRadius:9}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw.label}: RPE ${c.raw.x} → ${c.raw.y} km/u`}}},scales:{x:{title:{display:true,text:'RPE',font:{size:11}},min:1,max:10,ticks:{font:{size:10}}},y:{title:{display:true,text:'km/u',font:{size:11}},ticks:{font:{size:10}}}}}
-    });
-  } else {
-    document.getElementById('rpe-wrap').innerHTML='<div class="empty" style="padding:20px;"><div class="empty-icon" style="font-size:24px;">📊</div><div style="font-size:13px;">RPE-data zichtbaar zodra je het invult bij ritten</div></div>';
-  }
-}
-
-function genereerAdviezen(){
-  const adv=[];
-  const steady=ritten.filter(r=>r.type_rit==='steady-state');
-  const laatste5=ritten.slice(-5);
-  const consec=laatste5.slice(-3).every(r=>r.type_rit==='steady-state');
-  const intLaatste=laatste5.filter(r=>r.type_rit==='interval').length;
-  const beste=Math.max(...steady.map(r=>+r.afstand_km||0));
-  const warmRitten=ritten.filter(r=>(r.omstandigheden||'').includes('warm'));
-
-  if(consec)adv.push({k:'green',t:'Varieer: intervalrit aanbevolen',b:'3 steady-state ritten achter elkaar. Een intervalrit stimuleert je VO₂max en voorkomt adaptatiestagnatie.'});
-  if(intLaatste>=3)adv.push({k:'coral',t:'Let op: herstel na interval',b:'In je laatste 5 ritten '+intLaatste+' intervaltrainingen. Gun jezelf 48u herstel tussen zware sessies.'});
-  if(warmRitten.length>=2){const gem=warmRitten.filter(r=>r.herstel_sec).reduce((a,r)=>a+r.herstel_sec,0)/warmRitten.filter(r=>r.herstel_sec).length;adv.push({k:'amber',t:'Patroon: warmte verhoogt hersteltijd',b:`Gemiddeld ${Math.round(gem)} sec bij warmte. Normaal fysiologisch effect — extra hydratatie helpt.`});}
-  if(beste>=15.9)adv.push({k:'purple',t:'Volgende stap: stand 12 steady-state',b:'Je haalt consistent 15,9+ km op stand 11. Test een 10-min blok op stand 12 voor data over je nieuw plafond.'});
-  adv.push({k:'green',t:'Ademhalingstechniek: vasthouden',b:'Kort sterk ademhalen bij ~140 bpm houdt je hartslag aantoonbaar lager. Dit is diafragmatisch ademhalen — blijf dit toepassen.'});
-  if(ritten.filter(r=>r.rpe).length<3)adv.push({k:'purple',t:'Start met RPE bijhouden',b:'Vul bij elke rit RPE (1–10) in. Na 5 ritten koppelt de app je inspanning aan output en zie je of je efficiënter wordt.'});
-  return adv;
-}
-
-// CACHE CLEANER
-async function cacheSchoonmaken(){
-  toon('Cache wissen...');
-  try{
-    // 1. Wis de eigen service worker caches (alleen sport-tracker-*: andere apps
-    //    op hetzelfde domein delen de cache-opslag en moeten ongemoeid blijven)
-    if('caches' in window){
-      const keys = await caches.keys();
-      await Promise.all(keys.filter(k => k.startsWith('sport-tracker-')).map(k => caches.delete(k)));
-    }
-    // 2. Vraag actieve service worker om ook zijn caches te wissen
-    if('serviceWorker' in navigator){
-      const reg = await navigator.serviceWorker.getRegistration();
-      if(reg && reg.active){
-        reg.active.postMessage({type:'CLEAR_CACHE'});
-      }
-      // 3. Forceer een update-check van de service worker zelf
-      if(reg) await reg.update();
-    }
-    toon('Cache gewist — app wordt herladen...');
-    setTimeout(() => {
-      // Harde reload zonder cache
-      window.location.reload(true);
-    }, 800);
-  }catch(e){
-    toon('Kon cache niet wissen — probeer handmatig te herladen');
-  }
-}
-
-// INIT
-(async()=>{
-  document.getElementById('page-dashboard').innerHTML='<div class="loading"><div class="spinner"></div>Ritten laden...</div>';
-  await laadRitten();
-  renderDashboard();
-
-  if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('/sport/sw.js',{scope:'/sport/'}).then(reg=>{
-      // Check direct bij opstarten of er een nieuwere service worker is
-      reg.update();
-      // Als er een nieuwe versie geinstalleerd is, automatisch overschakelen
-      reg.addEventListener('updatefound',()=>{
-        const nieuweWorker=reg.installing;
-        nieuweWorker.addEventListener('statechange',()=>{
-          if(nieuweWorker.state==='installed' && navigator.serviceWorker.controller){
-            toon('Nieuwe versie beschikbaar — tik op ↻ om te verversen');
-          }
-        });
-      });
-    }).catch(()=>{});
-  }
-})();
+// ── INIT ──────────────────────────────────────────────
+loadHome();
 </script>
 </body>
 </html>
