@@ -529,8 +529,17 @@ function addExtraOef() {
   toast(`✓ ${oef.naam} toegevoegd`);
 }
 
+function saveSessieLocaal() {
+  if (!sessieState) return;
+  try { localStorage.setItem('sport_sessie_draft', JSON.stringify({sessieState, sessieGevoel, ts: Date.now()})); } catch(e) {}
+}
+function clearSessieLocaal() {
+  try { localStorage.removeItem('sport_sessie_draft'); } catch(e) {}
+}
+
 function renderSessie() {
   if (!sessieState) return;
+  saveSessieLocaal();
   document.getElementById('oef-list').innerHTML = sessieState.oefs.map(oef => {
     const st = sessieState.oefData[oef.oefening_key];
     if (!st) return '';
@@ -659,6 +668,7 @@ async function saveSessie() {
       if (setsErr) throw setsErr;
     }
 
+    clearSessieLocaal();
     toast('✓ Sessie opgeslagen!');
     sessieState = null;
     showScreen('home');
@@ -669,7 +679,8 @@ async function saveSessie() {
 }
 
 function cancelSessie() {
-  if (!confirm('Sessie annuleren?')) return;
+  if (!confirm('Sessie annuleren? Je voortgang gaat verloren.')) return;
+  clearSessieLocaal();
   sessieState = null;
   document.getElementById('gym-picker').style.display = 'block';
   document.getElementById('gym-sessie').style.display = 'none';
@@ -957,6 +968,57 @@ async function renderVoortgang() {
 }
 
 // ── INIT ──────────────────────────────────────────────
+// Herstel onafgemaakte sessie uit localStorage
+(function herstelDraft() {
+  try {
+    const raw = localStorage.getItem('sport_sessie_draft');
+    if (!raw) return;
+    const draft = JSON.parse(raw);
+    // Niet ouder dan 12 uur
+    if (!draft.sessieState || Date.now() - draft.ts > 12 * 3600 * 1000) { clearSessieLocaal(); return; }
+    const banner = document.createElement('div');
+    banner.id = 'draft-banner';
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:300;background:#1a1f2e;border-bottom:2px solid #e85d26;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px';
+    banner.innerHTML = `
+      <div style="font-size:14px"><strong>⚡ Sessie hervat</strong><br>
+        <span style="font-size:12px;color:#94a3b8">${draft.sessieState.naam} · niet opgeslagen</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="herstelSessie()" style="background:#e85d26;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer">Doorgaan</button>
+        <button onclick="verwerpDraft()" style="background:none;border:1px solid #2e3650;color:#94a3b8;border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer">Weggooien</button>
+      </div>`;
+    document.body.prepend(banner);
+    window._draft = draft;
+  } catch(e) { clearSessieLocaal(); }
+})();
+
+function herstelSessie() {
+  const draft = window._draft;
+  if (!draft) return;
+  document.getElementById('draft-banner')?.remove();
+  sessieState = draft.sessieState;
+  sessieGevoel = draft.sessieGevoel;
+  document.getElementById('gym-picker').style.display = 'none';
+  document.getElementById('gym-sessie').style.display = 'block';
+  document.getElementById('sessie-titel').textContent = sessieState.naam;
+  document.getElementById('sessie-datum').textContent = fmtDatum(new Date().toISOString().split('T')[0]);
+  document.getElementById('sessie-notities').value = '';
+  document.getElementById('overload-banners').innerHTML = '';
+  document.getElementById('add-oef-panel').style.display = 'none';
+  ['happy','ok','sad'].forEach(f => {
+    document.getElementById('ss-'+f).className = 'smiley-btn' + (f===sessieGevoel?' sel-'+f:'');
+  });
+  renderSessie();
+  showScreen('gym');
+  toast('Sessie hersteld ⚡');
+}
+
+function verwerpDraft() {
+  document.getElementById('draft-banner')?.remove();
+  clearSessieLocaal();
+  window._draft = null;
+}
+
 loadHome();
 
 // Service worker registratie (vereist voor PWA installatie)
