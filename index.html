@@ -558,6 +558,10 @@ function renderSessie() {
       </div>
       <div class="oef-body ${st.open?'open':''}">
         <div class="oef-uitleg">${oef.uitleg||''}</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <span style="font-size:13px;color:var(--muted)">Aantal sets:</span>
+          ${[3,4,5].map(n => `<button class="btn btn-sm ${st.sets.length===n?'btn-primary':'btn-ghost'}" onclick="setSetsAantal('${oef.oefening_key}',${n},${oef.gewicht_start||20},${oef.gewicht_stap||2.5})">${n}</button>`).join('')}
+        </div>
         <table class="sets-table">
           <thead><tr><th>Set</th><th>Gewicht (kg)</th><th>Reps</th><th>Doel</th></tr></thead>
           <tbody>${setsRows}</tbody>
@@ -591,6 +595,18 @@ function removeExtraOef(key) {
 }
 function setGewicht(key,i,v) { sessieState.oefData[key].sets[i].gewicht=parseFloat(v); }
 function setReps(key,i,v) { sessieState.oefData[key].sets[i].reps=parseInt(v); }
+function setSetsAantal(key, n, start, stap) {
+  const st = sessieState.oefData[key];
+  const huidig = st.sets.length;
+  if (n === huidig) return;
+  // Herbouw piramide met nieuwe n, behoud ingevulde waarden waar mogelijk
+  const nieuweGewichten = pyramidWeights(parseFloat(start), parseFloat(stap), n);
+  st.sets = nieuweGewichten.map((g, i) => ({
+    gewicht: st.sets[i]?.gewicht ?? g,
+    reps: st.sets[i]?.reps ?? null,
+  }));
+  renderSessie();
+}
 function setOefGevoel(key,g) { sessieState.oefData[key].gevoel=g; renderSessie(); }
 function setSessieGevoel(g) {
   sessieGevoel=g;
