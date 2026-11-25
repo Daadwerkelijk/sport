@@ -602,19 +602,41 @@ function removeExtraOef(key) {
   }
   renderSessie(); toast('Oefening verwijderd');
 }
-function setGewicht(key,i,v) { sessieState.oefData[key].sets[i].gewicht=parseFloat(v); }
+async function setGewicht(key, i, v) {
+  const val = parseFloat(v);
+  sessieState.oefData[key].sets[i].gewicht = val;
+  // Set 1 gewijzigd → bewaar als nieuw startgewicht in schema
+  if (i === 0) {
+    const oef = sessieState.oefs.find(o => o.oefening_key === key);
+    if (oef?.id && !oef.extra) {
+      await sb.from('gym_schemas').update({ gewicht_start: val }).eq('id', oef.id);
+      oef.gewicht_start = val;
+      const idx = SCHEMAS.findIndex(s => s.id === oef.id);
+      if (idx >= 0) SCHEMAS[idx].gewicht_start = val;
+      toast(`✓ Startgewicht ${val}kg onthouden`);
+    }
+  }
+}
 function setReps(key,i,v) { sessieState.oefData[key].sets[i].reps=parseInt(v); }
-function setSetsAantal(key, n, start, stap) {
+async function setSetsAantal(key, n, start, stap) {
   const st = sessieState.oefData[key];
   const huidig = st.sets.length;
   if (n === huidig) return;
-  // Herbouw piramide met nieuwe n, behoud ingevulde waarden waar mogelijk
   const nieuweGewichten = pyramidWeights(parseFloat(start), parseFloat(stap), n);
   st.sets = nieuweGewichten.map((g, i) => ({
     gewicht: st.sets[i]?.gewicht ?? g,
     reps: st.sets[i]?.reps ?? null,
   }));
+  // Opslaan in schema voor volgende sessie
+  const oef = sessieState.oefs.find(o => o.oefening_key === key);
+  if (oef?.id && !oef.extra) {
+    await sb.from('gym_schemas').update({ sets_aantal: n }).eq('id', oef.id);
+    oef.sets_aantal = n;
+    const idx = SCHEMAS.findIndex(s => s.id === oef.id);
+    if (idx >= 0) SCHEMAS[idx].sets_aantal = n;
+  }
   renderSessie();
+  toast(`✓ ${n} sets onthouden`);
 }
 function setOefGevoel(key,g) { sessieState.oefData[key].gevoel=g; renderSessie(); }
 function setSessieGevoel(g) {
