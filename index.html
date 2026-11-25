@@ -469,6 +469,28 @@ async function beginSessie(naam) {
     });
   }
 
+  // Check stagnatie: gewicht niet verhoogd in afgelopen 4 weken
+  const vierWekenGelden = new Date(Date.now() - 28*24*60*60*1000).toISOString().split('T')[0];
+  const { data: oudeSet } = await sb.from('gym_sets')
+    .select('oefening_key, gewicht, gym_sessies!inner(datum, schema_naam)')
+    .eq('gym_sessies.schema_naam', naam)
+    .lte('gym_sessies.datum', vierWekenGelden)
+    .eq('set_nummer', 1)
+    .order('gym_sessies(datum)', {ascending: false});
+  const stagnatieKeys = new Set();
+  if (oudeSet && oudeSet.length > 0) {
+    const oudeGewichten = {};
+    oudeSet.forEach(s => {
+      if (!oudeGewichten[s.oefening_key]) oudeGewichten[s.oefening_key] = parseFloat(s.gewicht);
+    });
+    oefs.forEach(oef => {
+      const oud = oudeGewichten[oef.oefening_key];
+      if (oud !== undefined && parseFloat(oef.gewicht_start) <= oud && !overloadKeys.has(oef.oefening_key)) {
+        stagnatieKeys.add(oef.oefening_key);
+      }
+    });
+  }
+
   const bannerEl = document.getElementById('overload-banners');
   bannerEl.innerHTML = [...overloadKeys].map(key => {
     const oef = oefs.find(o => o.oefening_key === key);
@@ -483,6 +505,16 @@ async function beginSessie(naam) {
           <button class="btn btn-sm btn-primary" onclick="acceptOverload(${oef.id},'${key}',${oef.gewicht_start},${nieuw})">✓ Accepteren</button>
           <button class="btn btn-sm btn-ghost" onclick="document.getElementById('banner-${key}').remove()">Nu niet</button>
         </div>
+      </div>
+    </div>`;
+  }).join('') + [...stagnatieKeys].map(key => {
+    const oef = oefs.find(o => o.oefening_key === key);
+    if (!oef) return '';
+    return `<div class="overload-banner" style="border-left-color:#f59e0b">
+      <div class="icon">⏰</div>
+      <div>
+        <strong>${oef.oefening_naam}</strong>: gewicht al 4+ weken gelijk (${oef.gewicht_start}kg)<br>
+        <span style="color:var(--muted);font-size:12px">Probeer vandaag je topset iets zwaarder</span>
       </div>
     </div>`;
   }).join('');
