@@ -581,6 +581,9 @@ function renderSessie() {
           <button class="smiley-btn ${st.gevoel==='ok'?'sel-ok':''}" onclick="setOefGevoel('${oef.oefening_key}','ok')">😐</button>
           <button class="smiley-btn ${st.gevoel==='sad'?'sel-sad':''}" onclick="setOefGevoel('${oef.oefening_key}','sad')">😞</button>
         </div>
+        <textarea placeholder="Opmerking (optioneel)..." rows="2"
+          style="width:100%;margin-top:10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:10px 12px;font-size:14px;resize:none"
+          onchange="setOefOpmerking('${oef.oefening_key}',this.value)">${st.opmerking||''}</textarea>
         ${verwijderBtn}
       </div>
     </div>`;
@@ -639,6 +642,7 @@ async function setSetsAantal(key, n, start, stap) {
   toast(`✓ ${n} sets onthouden`);
 }
 function setOefGevoel(key,g) { sessieState.oefData[key].gevoel=g; renderSessie(); }
+function setOefOpmerking(key,v) { sessieState.oefData[key].opmerking=v; saveSessieLocaal(); }
 function setSessieGevoel(g) {
   sessieGevoel=g;
   ['happy','ok','sad'].forEach(f => document.getElementById('ss-'+f).className='smiley-btn'+(f===g?' sel-'+f:''));
@@ -681,6 +685,7 @@ async function saveSessie() {
           reps_gepland_max: oef.reps_max,
           gevoel: st.gevoel,
           overload_bereikt: s.reps !== null && s.reps >= oef.reps_max,
+          notities: i === 0 ? (st.opmerking || null) : null,
         });
       });
     });
